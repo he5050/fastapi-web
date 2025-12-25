@@ -1,0 +1,34 @@
+[project]
+name = "fastapi-web"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "aiomysql>=0.3.2",
+    "cryptography>=46.0.3",
+    "fastapi>=0.127.0",
+    "pydantic-settings>=2.12.0",
+    "pydantic[email]>=2.12.5",
+    "python-dotenv>=1.2.1",
+    "sqlalchemy[asyncio]>=2.0.45",
+    "uvicorn[standard]>=0.40.0",
+]
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.36.2",
+    "mypy>=1.19.1",
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+exclude = ["venv", ".venv", "tests"]
+
+[tool.pyright]
+include = ["app"]
+exclude = ["**/node_modules", "**/__pycache__"]
+typeCheckingMode = "basic"
+pythonVersion = "3.12"
+pythonPlatform = "Darwin"
