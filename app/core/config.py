@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     DB_PASSWORD: str = ""
     DB_NAME: str = "test"
     DB_CHARSET: str = "utf8mb4"
+    DB_INIT: bool = False
 
     # 日志配置
     LOG_LEVEL: str = "INFO"
@@ -63,7 +64,7 @@ def print_config_info():
     打印基础配置信息 (启动时调用)
     """
     print("=" * 50)
-    print(f"🚀 应用启动中...")
+    print("🚀 应用启动中...")
     print(f"🌍 当前环境: {settings.APP_ENV}")
     print(f"🛠️  调试模式: {'开启' if settings.DEBUG else '关闭'}")
     print(f"📦 数据库: {settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}")

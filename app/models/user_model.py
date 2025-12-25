@@ -11,7 +11,7 @@ class User(Base):
     __tablename__ = "sys_users"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    username = Column(
+    user_name = Column(
         String(50), unique=True, index=True, nullable=False, comment="用户名"
     )
     email = Column(String(100), unique=True, index=True, nullable=True, comment="邮箱")

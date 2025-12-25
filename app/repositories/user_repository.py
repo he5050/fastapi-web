@@ -18,9 +18,15 @@ class UserRepository:
         )
         return result.scalars().first()
 
-    async def get_by_username(self, username: str) -> Optional[User]:
+    async def get_by_user_name(self, user_name: str) -> Optional[User]:
         result = await self.db.execute(
-            select(User).where(User.username == username, User.is_deleted == False)
+            select(User).where(User.user_name == user_name, User.is_deleted == False)
+        )
+        return result.scalars().first()
+
+    async def get_by_email(self, email: str) -> Optional[User]:
+        result = await self.db.execute(
+            select(User).where(User.email == email, User.is_deleted == False)
         )
         return result.scalars().first()
 
@@ -62,4 +68,6 @@ class UserRepository:
             update(User).where(User.id == user_id).values(is_deleted=True)
         )
         await self.db.commit()
-        return result.rowcount > 0
+        # SQLAlchemy 异步执行返回的 result 对象中包含 rowcount
+        rowcount = getattr(result, "rowcount", 0)
+        return bool(rowcount)

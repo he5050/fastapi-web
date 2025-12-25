@@ -36,10 +36,16 @@ class UserService:
         }
 
     async def create_user(self, obj_in: UserCreate):
-        # 检查重名
-        existing = await self.repo.get_by_username(obj_in.username)
-        if existing:
-            raise AppError(f"用户名 {obj_in.username} 已存在")
+        # 1. 检查用户名唯一性
+        existing_user = await self.repo.get_by_user_name(obj_in.user_name)
+        if existing_user:
+            raise AppError(f"用户名 {obj_in.user_name} 已存在")
+
+        # 2. 检查邮箱唯一性 (如果提供了邮箱)
+        if obj_in.email:
+            existing_email = await self.repo.get_by_email(obj_in.email)
+            if existing_email:
+                raise AppError(f"邮箱 {obj_in.email} 已被注册")
 
         user_data = obj_in.model_dump()
         password = user_data.pop("password")

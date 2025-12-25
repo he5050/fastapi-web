@@ -29,6 +29,19 @@ async def global_exception_handler(request: Request, exc: Exception):
             status_code=exc.status_code,
             content=BaseResponse.fail_res(message=exc.detail).model_dump(),
         )
+    elif hasattr(exc, "errors"):
+        # Pydantic 验证异常 (RequestValidationError)
+        # 获取第一个错误信息作为提示
+        errors = getattr(exc, "errors")()
+        first_error = errors[0] if errors else {}
+        msg = first_error.get("msg", "参数验证失败")
+        field = ".".join([str(l) for l in first_error.get("loc", [])])
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content=BaseResponse.fail_res(
+                message=f"参数错误: {field} {msg}"
+            ).model_dump(),
+        )
     else:
         # 系统未知异常
         print(f"系统异常: {str(exc)}")

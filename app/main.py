@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from app.core.config import settings, print_config_info
 from app.core.exceptions import global_exception_handler, AppError
 from app.db.session import check_db_connection
@@ -13,6 +14,13 @@ async def lifespan(app: FastAPI):
     """
     # 启动时
     print_config_info()
+
+    # 根据配置执行数据库初始化
+    if settings.DB_INIT:
+        from app.db.init_db import run_init_db
+
+        await run_init_db()
+
     await check_db_connection()
     yield
     # 关闭时
@@ -27,6 +35,9 @@ app = FastAPI(
 )
 
 # 注册全局异常处理
+app.add_exception_handler(AppError, global_exception_handler)
+app.add_exception_handler(HTTPException, global_exception_handler)
+app.add_exception_handler(RequestValidationError, global_exception_handler)
 app.add_exception_handler(Exception, global_exception_handler)
 
 # 注册路由

@@ -9,8 +9,9 @@ DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=root
-DB_NAME=fastapi_web
-DB_CHARSET=utf8mb4
+DB_NAME="fastapi_web"
+DB_CHARSET="utf8mb4"
+DB_INIT=false
 
 # 日志配置
 LOG_LEVEL=INFO
