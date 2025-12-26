@@ -12,3 +12,6 @@ wheels/
 docs/
 .comate
 .pytest_cache/
+htmlcov/
+.coverage
+coverage.xml

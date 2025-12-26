@@ -4,11 +4,14 @@
     "Asyncio",
     "basedpyright",
     "fastapi",
+    "htmlcov",
     "mypy",
     "Mypy",
+    "pycache",
     "Pydantic",
     "pytest",
     "Qube",
-    "uvicorn"
+    "uvicorn",
+    "venv"
   ]
 }
