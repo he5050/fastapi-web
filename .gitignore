@@ -10,3 +10,5 @@ wheels/
 .venv
 .env.local
 docs/
+.comate
+.pytest_cache/

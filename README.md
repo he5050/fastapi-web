@@ -108,3 +108,117 @@ chmod +x check.sh
 ```
 
 生成的报告将保存在 `docs/` 目录下，文件名为 `类型检查_年月日_时分秒.md`。
+
+## 测试指南
+
+### 测试框架和依赖
+
+项目使用 **pytest** 作为测试框架，支持异步测试：
+
+```bash
+# 安装测试依赖
+uv sync --group dev
+
+# 查看所有安装的依赖
+uv pip list
+```
+
+### 运行测试
+
+```bash
+# 运行所有测试
+uv run pytest
+
+# 运行指定测试文件
+uv run pytest tests/test_basic_functionality.py
+
+# 运行指定测试类
+uv run pytest tests/test_password_security.py::TestPasswordSecurity
+
+# 运行指定测试方法
+uv run pytest tests/test_password_security.py::TestPasswordSecurity::test_hash_password_bcrypt
+
+# 运行测试并显示详细信息
+uv run pytest -v
+
+# 运行测试并显示覆盖率报告
+uv run pytest --cov=app --cov-report=html --cov-report=term-missing
+
+# 在失败时进入PDB调试模式
+uv run pytest -x --pdb
+```
+
+### 测试用法示例
+
+#### 1. 基础功能测试
+
+```bash
+# 运行基础功能测试
+uv run pytest tests/test_basic_functionality.py -v
+
+# 输出示例：
+# test_basic_functionality.py::test_basic_password_hashing PASSED [ 25%]
+# test_basic_functionality.py::test_basic_password_verification PASSED [ 50%]
+# test_basic_functionality.py::test_password_strength_basic PASSED [ 75%]
+# test_basic_functionality.py::test_user_schema_basic PASSED [100%]
+```
+
+#### 2. 密码安全测试
+
+```bash
+# 运行完整的密码安全测试套件
+uv run pytest tests/test_password_security.py -v
+uv run pytest tests/test_password_security_fixed.py -v
+
+# 输出示例：
+# test_password_security.py::TestPasswordSecurity::test_hash_password_bcrypt PASSED
+# test_password_security.py::TestPasswordSecurity::test_verify_password PASSED
+# test_password_security.py::TestPasswordSecurity::test_password_strength_validation_success PASSED
+# ...
+```
+
+#### 3. 异步功能测试
+
+```bash
+# 运行异步测试（包含数据库模拟）
+uv run pytest tests/test_password_security.py::TestPasswordSecurity::test_create_user_with_password_validation -v
+```
+
+#### 4. 持续集成检查
+
+```bash
+# 同时运行所有测试和类型检查
+./check.sh && uv run pytest --cov=app --cov-report=term-missing
+```
+
+### 测试文件说明
+
+- **`test_basic_functionality.py`**: 基础功能测试（密码哈希、验证、模式验证）
+- **`test_password_security.py`**: 完整的密码安全测试套件
+- **`test_password_security_fixed.py`**: 修复版本的密码安全测试
+
+### 测试最佳实践
+
+1. **环境隔离**: 测试会自动使用独立的测试环境，不会影响生产数据库
+2. **模拟对象**: 使用 `unittest.mock` 模拟数据库连接
+3. **异步支持**: 使用 `pytest-asyncio` 支持异步测试
+4. **覆盖率**: 支持生成详细的覆盖率报告
+
+### 编写新测试
+
+创建新测试时参考现有测试结构：
+
+```python
+import pytest
+from unittest.mock import Mock
+from app.services.user_service import UserService
+
+def test_new_feature():
+    """测试描述"""
+    mock_db = Mock()
+    service = UserService(mock_db)
+
+    # 测试逻辑
+    result = service.some_method()
+    assert result is expected_result
+```

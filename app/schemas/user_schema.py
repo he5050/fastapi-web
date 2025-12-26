@@ -36,11 +36,42 @@ class UserCreate(UserBase):
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> Any:
+        import re
+
         rules = [
             ValidationRule(required=True, message="请输入密码"),
-            ValidationRule(min_len=6, message="密码长度不能少于 6 个字符"),
+            ValidationRule(min_len=8, message="密码长度至少8位"),
+            ValidationRule(max_len=128, message="密码长度不能超过128位"),
         ]
-        return validate_rules(v, rules)
+
+        # 基础规则验证
+        v = validate_rules(v, rules)
+
+        # 密码强度验证
+        if not any(c.isupper() for c in v):
+            raise ValueError("密码必须包含至少一个大写字母")
+        if not any(c.islower() for c in v):
+            raise ValueError("密码必须包含至少一个小写字母")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("密码必须包含至少一个数字")
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
+            raise ValueError("密码必须包含至少一个特殊字符")
+
+        # 检查常见弱密码模式（使用更精确的匹配）
+        weak_patterns = [
+            r"^123456",
+            r"^password",
+            r"^admin",
+            r"^qwerty",
+            r"^abc123",
+            r"^111111",
+            r"^000000",
+        ]
+        for pattern in weak_patterns:
+            if re.search(pattern, v, re.IGNORECASE):
+                raise ValueError("密码不能包含常见的弱密码模式")
+
+        return v
 
 
 class UserUpdate(BaseSchema):
@@ -57,6 +88,7 @@ class UserOut(UserBase):
     用户详情输出 Schema
     """
 
+    user_name: str
     id: int
     is_active: bool
     created_at: datetime

@@ -4,7 +4,8 @@ from app.schemas.user_schema import UserCreate, UserUpdate
 from app.models.user_model import User
 from app.core.exceptions import AppError
 from typing import Any
-import hashlib
+import bcrypt
+import re
 
 
 class UserService:
@@ -16,8 +17,47 @@ class UserService:
         self.repo = UserRepository(db)
 
     def _hash_password(self, password: str) -> str:
-        """简单的哈希处理 (实际项目建议用 passlib)"""
-        return hashlib.sha256(password.encode()).hexdigest()
+        """使用bcrypt进行安全密码哈希"""
+        # bcrypt只支持72字节以内的密码，需要截断
+        password_bytes = password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+        
+        # 生成盐值并哈希
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        return hashed.decode('utf-8')
+    
+    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+        """验证密码"""
+        password_bytes = plain_password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+        hashed_bytes = hashed_password.encode('utf-8')
+        
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
+    
+    def _validate_password_strength(self, password: str) -> None:
+        """验证密码强度"""
+        if len(password) < 8:
+            raise AppError("密码长度至少8位")
+        if not any(c.isupper() for c in password):
+            raise AppError("密码必须包含至少一个大写字母")
+        if not any(c.islower() for c in password):
+            raise AppError("密码必须包含至少一个小写字母")
+        if not any(c.isdigit() for c in password):
+            raise AppError("密码必须包含至少一个数字")
+        # 检查是否包含特殊字符
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+            raise AppError("密码必须包含至少一个特殊字符")
+        # 检查是否包含常见弱密码模式（使用更精确的匹配）
+        weak_patterns = [
+            r'^123456', r'^password', r'^admin', r'^qwerty',
+            r'^abc123', r'^111111', r'^000000'
+        ]
+        for pattern in weak_patterns:
+            if re.search(pattern, password, re.IGNORECASE):
+                raise AppError("密码不能包含常见的弱密码模式")
 
     async def get_user(self, user_id: int) -> User:
         user = await self.repo.get_by_id(user_id)
@@ -37,12 +77,15 @@ class UserService:
         }
 
     async def create_user(self, obj_in: UserCreate) -> User:
-        # 1. 检查用户名唯一性
+        # 1. 验证密码强度
+        self._validate_password_strength(obj_in.password)
+        
+        # 2. 检查用户名唯一性
         existing_user = await self.repo.get_by_user_name(obj_in.user_name)
         if existing_user:
             raise AppError(f"用户名 {obj_in.user_name} 已存在")
 
-        # 2. 检查邮箱唯一性 (如果提供了邮箱)
+        # 3. 检查邮箱唯一性 (如果提供了邮箱)
         if obj_in.email:
             existing_email = await self.repo.get_by_email(obj_in.email)
             if existing_email:
