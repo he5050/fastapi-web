@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings, print_config_info
 from app.core.exceptions import global_exception_handler, AppError
 from app.db.session import check_db_connection
@@ -33,6 +34,15 @@ app = FastAPI(
     description="基于 FastAPI 的分层架构用户管理系统",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+# 添加CORS中间件
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=settings.CORS_ALLOW_METHODS,
+    allow_headers=settings.CORS_ALLOW_HEADERS,
 )
 
 # 注册全局异常处理

@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     # 日志配置
     LOG_LEVEL: str = "INFO"
 
+    # CORS配置
+    CORS_ORIGINS: list[str] = ["*"]  # 生产环境应该具体配置
+    CORS_ALLOW_CREDENTIALS: bool = True
+    CORS_ALLOW_METHODS: list[str] = ["*"]
+    CORS_ALLOW_HEADERS: list[str] = ["*"]
+
     # 自动识别环境并加载对应的 .env 文件
     # 优先使用 local 环境，如果不存在则使用 dev
     model_config = SettingsConfigDict(
