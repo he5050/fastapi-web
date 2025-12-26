@@ -27,7 +27,7 @@ class PageData(BaseSchema, Generic[T]):
     分页数据容器
     """
 
-    items: list[T]
+    records: list[T]
     total: int
     page: int
     page_size: int

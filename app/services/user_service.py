@@ -28,7 +28,7 @@ class UserService:
         items, total = await self.repo.get_list(page, page_size)
         total_page = (total + page_size - 1) // page_size
         return {
-            "items": items,
+            "records": items,
             "total": total,
             "page": page,
             "page_size": page_size,
