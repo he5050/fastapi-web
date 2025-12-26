@@ -1,5 +1,5 @@
 from typing import Any, Optional, Generic, TypeVar
-from app.schemas.base import BaseSchema
+from app.schemas.base_schema import BaseSchema
 
 T = TypeVar("T")
 

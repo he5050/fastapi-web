@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserCreate, UserUpdate
+from app.schemas.user_schema import UserCreate, UserUpdate
 from app.models.user_model import User
 from app.core.exceptions import AppError
 import hashlib

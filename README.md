@@ -21,7 +21,7 @@ app/
 ├── db/              # 数据库连接与 Session 管理
 ├── models/          # 数据库 SQL 模型 (*_model.py 风格)
 ├── repositories/    # 数据访问层 (SQLAlchemy Logic)
-├── schemas/         # Pydantic 数据验证模型
+├── schemas/         # Pydantic 数据验证模型 (*_schema.py 风格)
 ├── services/        # 业务逻辑层
 └── main.py          # 应用入口
 ```

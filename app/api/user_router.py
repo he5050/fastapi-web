@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.services.user_service import UserService
-from app.schemas.user import UserCreate, UserUpdate, UserOut
+from app.schemas.user_schema import UserCreate, UserUpdate, UserOut
 from app.core.response import BaseResponse, PageResponse
 from typing import List
 

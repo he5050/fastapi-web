@@ -1,7 +1,7 @@
 from typing import Optional
-from pydantic import EmailStr, Field
+from pydantic import EmailStr, Field, field_validator
 from datetime import datetime
-from app.schemas.base import BaseSchema
+from app.schemas.base_schema import BaseSchema
 
 
 class UserBase(BaseSchema):
@@ -20,6 +20,13 @@ class UserCreate(UserBase):
     """
 
     password: str = Field(..., min_length=6, description="密码")
+
+    @field_validator("user_name")
+    @classmethod
+    def name_must_be_filled(cls, v: str):
+        if not v or not v.strip():
+            raise ValueError("用户名不能为空")
+        return v
 
 
 class UserUpdate(BaseSchema):
