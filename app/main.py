@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings, print_config_info
 from app.core.exceptions import global_exception_handler, AppError
 from app.db.session import check_db_connection
@@ -37,6 +38,7 @@ app = FastAPI(
 # 注册全局异常处理
 app.add_exception_handler(AppError, global_exception_handler)
 app.add_exception_handler(HTTPException, global_exception_handler)
+app.add_exception_handler(StarletteHTTPException, global_exception_handler)
 app.add_exception_handler(RequestValidationError, global_exception_handler)
 app.add_exception_handler(Exception, global_exception_handler)
 
