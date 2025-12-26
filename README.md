@@ -129,86 +129,116 @@ uv pip list
 # 运行所有测试
 uv run pytest
 
-# 运行指定测试文件
-uv run pytest tests/test_basic_functionality.py
+# 按模块运行测试
+uv run pytest tests/security/                          # 运行安全测试
+uv run pytest tests/unit/                              # 运行所有单元测试
+uv run pytest tests/unit/services/                     # 运行服务层测试
+uv run pytest tests/unit/schemas/                      # 运行模式验证测试
+uv run pytest tests/unit/api/                          # 运行API路由测试
+uv run pytest tests/integration/                       # 运行集成测试
 
-# 运行指定测试类
-uv run pytest tests/test_password_security.py::TestPasswordSecurity
+# 指定测试类或方法
+uv run pytest tests/security/test_password_security.py::TestPasswordSecurity
+uv run pytest tests/security/test_password_security.py::TestPasswordSecurity::test_hash_password_bcrypt
 
-# 运行指定测试方法
-uv run pytest tests/test_password_security.py::TestPasswordSecurity::test_hash_password_bcrypt
-
-# 运行测试并显示详细信息
-uv run pytest -v
-
-# 运行测试并显示覆盖率报告
-uv run pytest --cov=app --cov-report=html --cov-report=term-missing
-
-# 在失败时进入PDB调试模式
-uv run pytest -x --pdb
+# 常用参数
+uv run pytest -v                                      # 显示详细信息
+uv run pytest --cov=app --cov-report=html            # 生成覆盖率报告
+uv run pytest -x --pdb                               # 失败时进入调试模式
+uv run pytest -k "password"                          # 只运行包含"password"的测试
 ```
 
 ### 测试用法示例
 
-#### 1. 基础功能测试
+#### 1. 安全测试 - 密码安全
 
 ```bash
-# 运行基础功能测试
-uv run pytest tests/test_basic_functionality.py -v
+# 运行密码安全测试
+uv run pytest tests/security/ -v
 
 # 输出示例：
-# test_basic_functionality.py::test_basic_password_hashing PASSED [ 25%]
-# test_basic_functionality.py::test_basic_password_verification PASSED [ 50%]
-# test_basic_functionality.py::test_password_strength_basic PASSED [ 75%]
-# test_basic_functionality.py::test_user_schema_basic PASSED [100%]
+# tests/security/test_password_security.py::TestPasswordSecurity::test_hash_password_bcrypt PASSED [16%]
+# tests/security/test_password_security.py::TestPasswordSecurity::test_verify_password PASSED [33%]
+# tests/security/test_password_security.py::TestPasswordSecurity::test_password_strength_validation_success PASSED [50%]
 ```
 
-#### 2. 密码安全测试
+#### 2. 服务层测试 - 用户服务
 
 ```bash
-# 运行完整的密码安全测试套件
-uv run pytest tests/test_password_security.py -v
-uv run pytest tests/test_password_security_fixed.py -v
+# 运行用户服务测试
+uv run pytest tests/unit/services/ -v
 
 # 输出示例：
-# test_password_security.py::TestPasswordSecurity::test_hash_password_bcrypt PASSED
-# test_password_security.py::TestPasswordSecurity::test_verify_password PASSED
-# test_password_security.py::TestPasswordSecurity::test_password_strength_validation_success PASSED
-# ...
+# tests/unit/services/test_user_service.py::TestUserService::test_create_user_with_password_validation PASSED [25%]
+# tests/unit/services/test_user_service.py::TestUserService::test_basic_password_hashing PASSED [50%]
 ```
 
-#### 3. 异步功能测试
+#### 3. 模式验证测试 - 数据验证
 
 ```bash
-# 运行异步测试（包含数据库模拟）
-uv run pytest tests/test_password_security.py::TestPasswordSecurity::test_create_user_with_password_validation -v
+# 运行模式验证测试
+uv run pytest tests/unit/schemas/ -v
+
+# 输出示例：
+# tests/unit/schemas/test_user_schema.py::TestUserSchemaValidation::test_valid_user_creation PASSED [20%]
+# tests/unit/schemas/test_user_schema.py::TestUserSchemaValidation::test_valid_password_schema PASSED [40%]
 ```
 
-#### 4. 持续集成检查
+#### 4. API 路由测试 - 端点验证
+
+```bash
+# 运行API路由测试
+uv run pytest tests/unit/api/ -v
+
+# 输出示例：
+# tests/unit/api/test_user_router.py::TestUserRouter::test_root_endpoint PASSED [25%]
+# tests/unit/api/test_user_router.py::TestUserRouter::test_api_docs_availability PASSED [50%]
+```
+
+#### 5. 集成测试 - 完整流程
+
+```bash
+# 运行集成测试（测试完整用户工作流）
+uv run pytest tests/integration/ -v
+
+# 输出示例：
+# tests/integration/test_user_workflow.py::TestUserWorkflow::test_user_creation_workflow PASSED [50%]
+# tests/integration/test_user_workflow.py::TestUserWorkflow::test_api_endpoint_structure PASSED [100%]
+```
+
+#### 6. 质量保证检查
 
 ```bash
 # 同时运行所有测试和类型检查
 ./check.sh && uv run pytest --cov=app --cov-report=term-missing
 ```
 
-### 测试文件说明
+### 测试覆盖率报告
 
-- **`test_basic_functionality.py`**: 基础功能测试（密码哈希、验证、模式验证）
-- **`test_password_security.py`**: 完整的密码安全测试套件
-- **`test_password_security_fixed.py`**: 修复版本的密码安全测试
+```bash
+# 生成详细的HTML覆盖率报告
+uv run pytest --cov=app --cov-report=html
+
+# 在终端显示覆盖率
+uv run pytest --cov=app --cov-report=term-missing
+
+# 覆盖率报告将显示在 coverage_html/index.html
+```
 
 ### 测试最佳实践
 
-1. **环境隔离**: 测试会自动使用独立的测试环境，不会影响生产数据库
-2. **模拟对象**: 使用 `unittest.mock` 模拟数据库连接
-3. **异步支持**: 使用 `pytest-asyncio` 支持异步测试
-4. **覆盖率**: 支持生成详细的覆盖率报告
+1. **模块化设计**: 测试按功能和层级划分，便于维护和扩展
+2. **环境隔离**: 测试使用模拟对象，不会影响生产数据库
+3. **异步支持**: 支持异步代码测试，确保并发安全性
+4. **全面覆盖**: 包含单元测试、集成测试和安全测试
+5. **持续集成**: 与类型检查工具结合，确保代码质量
 
 ### 编写新测试
 
-创建新测试时参考现有测试结构：
+创建新测试时，请根据功能存放至对应目录：
 
 ```python
+# 服务层测试 - 存放在 tests/unit/services/
 import pytest
 from unittest.mock import Mock
 from app.services.user_service import UserService
@@ -222,3 +252,5 @@ def test_new_feature():
     result = service.some_method()
     assert result is expected_result
 ```
+
+每个测试目录都包含 `__init__.py` 文件，支持模块导入和测试发现。
