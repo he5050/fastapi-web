@@ -5,6 +5,8 @@ from app.core.exceptions import global_exception_handler, AppError
 from app.db.session import check_db_connection
 from app.api.user_router import router as user_router
 from contextlib import asynccontextmanager
+from app.db.init_db import run_init_db
+import uvicorn
 
 
 @asynccontextmanager
@@ -17,8 +19,6 @@ async def lifespan(app: FastAPI):
 
     # 根据配置执行数据库初始化
     if settings.DB_INIT:
-        from app.db.init_db import run_init_db
-
         await run_init_db()
 
     await check_db_connection()
@@ -50,8 +50,6 @@ async def root():
 
 
 if __name__ == "__main__":
-    import uvicorn
-
     uvicorn.run(
         "app.main:app", host="127.0.0.1", port=settings.APP_PORT, reload=settings.DEBUG
     )
