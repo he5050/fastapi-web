@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func
 from app.models.user_model import User
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any
 
 
 class UserRepository:
@@ -59,7 +59,7 @@ class UserRepository:
         await self.db.refresh(user)
         return user
 
-    async def update(self, user_id: int, obj_in: dict) -> Optional[User]:
+    async def update(self, user_id: int, obj_in: dict[str, Any]) -> Optional[User]:
         await self.db.execute(update(User).where(User.id == user_id).values(**obj_in))
         await self.db.commit()
         return await self.get_by_id(user_id)

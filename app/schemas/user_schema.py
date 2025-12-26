@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from pydantic import EmailStr, Field, field_validator
 from datetime import datetime
 from app.schemas.base_schema import BaseSchema
@@ -26,7 +26,7 @@ class UserCreate(UserBase):
 
     @field_validator("user_name")
     @classmethod
-    def validate_user_name(cls, v: str):
+    def validate_user_name(cls, v: str) -> Any:
         rules = [
             ValidationRule(required=True, message="请输入用户名"),
             ValidationRule(min_len=3, message="用户名长度不能少于 3 个字符"),
@@ -35,7 +35,7 @@ class UserCreate(UserBase):
 
     @field_validator("password")
     @classmethod
-    def validate_password(cls, v: str):
+    def validate_password(cls, v: str) -> Any:
         rules = [
             ValidationRule(required=True, message="请输入密码"),
             ValidationRule(min_len=6, message="密码长度不能少于 6 个字符"),

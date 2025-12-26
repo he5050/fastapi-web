@@ -14,11 +14,11 @@ class BaseResponse(BaseSchema, Generic[T]):
     message: str = ""
 
     @classmethod
-    def success_res(cls, data: Any = None, message: str = "成功") -> "BaseResponse":
+    def success_res(cls, data: Any = None, message: str = "成功") -> "BaseResponse[T]":
         return cls(success=True, data=data, message=message)
 
     @classmethod
-    def fail_res(cls, message: str = "失败", data: Any = None) -> "BaseResponse":
+    def fail_res(cls, message: str = "失败", data: Any = None) -> "BaseResponse[T]":
         return cls(success=False, data=data, message=message)
 
 

@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
+from typing import AsyncGenerator
 from app.core.config import settings
 import logging
 
@@ -23,7 +24,7 @@ class Base(declarative_base()):
     __abstract__ = True
 
 
-async def get_db():
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     获取数据库异步会话的依赖项
     """
@@ -34,7 +35,7 @@ async def get_db():
             await session.close()
 
 
-async def check_db_connection():
+async def check_db_connection() -> bool:
     """
     检查数据库连接状态 (启动时调用)
     """

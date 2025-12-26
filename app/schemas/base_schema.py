@@ -14,7 +14,7 @@ class BaseSchema(BaseModel):
     )
 
     @field_serializer("*")
-    def serialize_datetime(self, value: Any):
+    def serialize_datetime(self, value: Any) -> Any:
         # 优先判断 datetime（因为它包含信息最全）
         if isinstance(value, datetime):
             return value.strftime("%Y-%m-%d %H:%M:%S")

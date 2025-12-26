@@ -4,13 +4,16 @@ from app.db.session import get_db
 from app.services.user_service import UserService
 from app.schemas.user_schema import UserCreate, UserUpdate, UserOut
 from app.core.response import BaseResponse, PageResponse
-from typing import List, Optional, Any
+from typing import Any
+from app.core.response import PageData
 
 router = APIRouter(prefix="/users", tags=["用户管理"])
 
 
 @router.post("/add", response_model=BaseResponse[UserOut], summary="创建用户")
-async def create_user(obj_in: UserCreate, db: AsyncSession = Depends(get_db)):
+async def create_user(
+    obj_in: UserCreate, db: AsyncSession = Depends(get_db)
+) -> BaseResponse[UserOut]:
     service = UserService(db)
     user = await service.create_user(obj_in)
     return BaseResponse.success_res(data=user)
@@ -21,7 +24,7 @@ async def list_users(
     page: Any = Query(1, description="页码"),
     page_size: Any = Query(10, alias="pageSize", description="每页数量"),
     db: AsyncSession = Depends(get_db),
-):
+) -> PageResponse[UserOut]:
     """
     获取用户列表，支持 page=&pageSize= 这种空参数情况进行兜底
     """
@@ -47,13 +50,16 @@ async def list_users(
 
     service = UserService(db)
     data = await service.list_users(current_page, current_size)
-    return BaseResponse.success_res(data=data)
+    page_data = PageData[UserOut](**data)
+    return PageResponse(success=True, data=page_data, message="获取成功")
 
 
 @router.get(
     "/detail/{user_id}", response_model=BaseResponse[UserOut], summary="获取用户详情"
 )
-async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
+async def get_user(
+    user_id: int, db: AsyncSession = Depends(get_db)
+) -> BaseResponse[UserOut]:
     service = UserService(db)
     user = await service.get_user(user_id)
     return BaseResponse.success_res(data=user)
@@ -64,14 +70,18 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
 )
 async def update_user(
     user_id: int, obj_in: UserUpdate, db: AsyncSession = Depends(get_db)
-):
+) -> BaseResponse[UserOut]:
     service = UserService(db)
     user = await service.update_user(user_id, obj_in)
     return BaseResponse.success_res(data=user)
 
 
-@router.delete("/delete/{user_id}", response_model=BaseResponse, summary="删除用户")
-async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
+@router.delete(
+    "/delete/{user_id}", response_model=BaseResponse[Any], summary="删除用户"
+)
+async def delete_user(
+    user_id: int, db: AsyncSession = Depends(get_db)
+) -> BaseResponse[Any]:
     service = UserService(db)
     await service.delete_user(user_id)
     return BaseResponse.success_res(message="用户删除成功")

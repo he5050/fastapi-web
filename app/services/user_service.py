@@ -3,6 +3,7 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.user_schema import UserCreate, UserUpdate
 from app.models.user_model import User
 from app.core.exceptions import AppError
+from typing import Any
 import hashlib
 
 
@@ -18,13 +19,13 @@ class UserService:
         """简单的哈希处理 (实际项目建议用 passlib)"""
         return hashlib.sha256(password.encode()).hexdigest()
 
-    async def get_user(self, user_id: int):
+    async def get_user(self, user_id: int) -> User:
         user = await self.repo.get_by_id(user_id)
         if not user:
             raise AppError(f"用户 ID {user_id} 不存在")
         return user
 
-    async def list_users(self, page: int, page_size: int):
+    async def list_users(self, page: int, page_size: int) -> dict[str, Any]:
         items, total = await self.repo.get_list(page, page_size)
         total_page = (total + page_size - 1) // page_size
         return {
@@ -35,7 +36,7 @@ class UserService:
             "total_page": total_page,
         }
 
-    async def create_user(self, obj_in: UserCreate):
+    async def create_user(self, obj_in: UserCreate) -> User:
         # 1. 检查用户名唯一性
         existing_user = await self.repo.get_by_user_name(obj_in.user_name)
         if existing_user:
@@ -54,11 +55,14 @@ class UserService:
         db_user = User(**user_data)
         return await self.repo.create(db_user)
 
-    async def update_user(self, user_id: int, obj_in: UserUpdate):
+    async def update_user(self, user_id: int, obj_in: UserUpdate) -> User:
         await self.get_user(user_id)  # 确保存在
         update_data = obj_in.model_dump(exclude_unset=True)
-        return await self.repo.update(user_id, update_data)
+        result = await self.repo.update(user_id, update_data)
+        if result is None:
+            raise AppError(f"用户 ID {user_id} 更新失败")
+        return result
 
-    async def delete_user(self, user_id: int):
+    async def delete_user(self, user_id: int) -> bool:
         await self.get_user(user_id)  # 确保存在
         return await self.repo.delete(user_id)
