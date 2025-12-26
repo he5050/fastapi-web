@@ -4,7 +4,7 @@ from app.db.session import get_db
 from app.services.user_service import UserService
 from app.schemas.user_schema import UserCreate, UserUpdate, UserOut
 from app.core.response import BaseResponse, PageResponse
-from typing import List
+from typing import List, Optional, Any
 
 router = APIRouter(prefix="/users", tags=["用户管理"])
 
@@ -18,12 +18,35 @@ async def create_user(obj_in: UserCreate, db: AsyncSession = Depends(get_db)):
 
 @router.get("/list", response_model=PageResponse[UserOut], summary="获取用户列表")
 async def list_users(
-    page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(10, alias="pageSize", ge=1, le=100, description="每页数量"),
+    page: Any = Query(1, description="页码"),
+    page_size: Any = Query(10, alias="pageSize", description="每页数量"),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    获取用户列表，支持 page=&pageSize= 这种空参数情况进行兜底
+    """
+
+    def safe_int(val: Any, default: int) -> int:
+        if val is None or val == "":
+            return default
+        try:
+            return int(val)
+        except (ValueError, TypeError):
+            return default
+
+    current_page = safe_int(page, 1)
+    current_size = safe_int(page_size, 10)
+
+    # 边界检查
+    if current_page < 1:
+        current_page = 1
+    if current_size < 1:
+        current_size = 10
+    if current_size > 100:
+        current_size = 100
+
     service = UserService(db)
-    data = await service.list_users(page, page_size)
+    data = await service.list_users(current_page, current_size)
     return BaseResponse.success_res(data=data)
 
 

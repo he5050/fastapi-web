@@ -48,13 +48,8 @@ class UserUpdate(BaseSchema):
     用户更新 Schema
     """
 
-    user_name: Optional[str] = Field(
-        None, min_length=3, max_length=50, description="用户名"
-    )
     email: Optional[EmailStr] = Field(None, description="邮箱")
     full_name: Optional[str] = Field(None, max_length=100, description="全名")
-    password: Optional[str] = Field(None, min_length=6, description="新密码")
-    is_active: Optional[bool] = None
 
 
 class UserOut(UserBase):

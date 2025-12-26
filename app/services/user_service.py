@@ -56,12 +56,7 @@ class UserService:
 
     async def update_user(self, user_id: int, obj_in: UserUpdate):
         await self.get_user(user_id)  # 确保存在
-
         update_data = obj_in.model_dump(exclude_unset=True)
-        if "password" in update_data:
-            password = update_data.pop("password")
-            update_data["hashed_password"] = self._hash_password(password)
-
         return await self.repo.update(user_id, update_data)
 
     async def delete_user(self, user_id: int):
