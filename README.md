@@ -5,7 +5,7 @@
 ## 主要特性
 
 1.  **分层架构**: 严格遵循 `Router -> Service -> Repository -> Model` 模式，代码耦合度低。
-2.  **多环境配置**: 支持 `.env.dev`, `.env.local`, `.env.pro`，通过 `APP_ENV` 环境变量自动切换。
+2.  **多环境配置**: 支持 `.env.dev`, `.env.local`, `.env.pro`，通过 `APP_ENV` 环境变量或启动参数自动切换，优先使用 local 环境。
 3.  **标准响应**: 接口返回统一的 JSON 格式，且支持 **驼峰风格 (camelCase)**。
 4.  **参数自动转换**: 通过 `BaseSchema` 自动处理请求参数的驼峰化。
 5.  **自动化数据库初始化**: 启动时自动检查/创建数据库和表（受 `DB_INIT` 开关控制）。
@@ -53,20 +53,30 @@ _注：该脚本将根据 `.env._`中的配置自动执行`CREATE DATABASE IF NO
 
 ### 4. 启动应用
 
-您可以使用 `uv` 运行，或者更方便地使用我为您准备的 `start.sh` 脚本（它会自动识别环境并开启 --reload）：
+您可以使用 `uv` 运行，或者更方便地使用我为您准备的 `start.sh` 脚本（支持多环境启动）：
 
 ```bash
 # 赋予执行权限 (如果尚未赋予)
 chmod +x start.sh
 
-# 启动项目
+# 默认启动（优先使用 local 环境，不存在则用 dev）
 ./start.sh
+
+# 指定环境启动
+./start.sh local   # 使用 .env.local 配置
+./start.sh dev     # 使用 .env.dev 配置
+./start.sh pro     # 使用 .env.pro 配置（生产环境）
 ```
 
 或直接使用 uvicorn：
 
 ```bash
+# 使用默认配置
 uv run uvicorn app.main:app --reload
+
+# 指定环境变量启动
+APP_ENV=local uv run uvicorn app.main:app --reload
+APP_ENV=dev uv run uvicorn app.main:app --reload
 ```
 
 ## 验证截图/输出示例
@@ -74,12 +84,14 @@ uv run uvicorn app.main:app --reload
 启动后您将看到类似如下的中文输出：
 
 ```text
+📋 已加载环境配置文件: .env.local
+🚀 Using uv to start FastAPI in local mode on port 8000...
 ==================================================
 🚀 应用启动中...
-🌍 当前环境: dev
+🌍 当前环境: local
 🛠️  调试模式: 开启
-📦 数据库: 127.0.0.1:3306/fastapi_web
-📜 日志级别: DEBUG
+📦 数据库: 127.0.0.1:3306/test
+📜 日志级别: INFO
 📄 API文档: http://127.0.0.1:8000/docs
 ==================================================
 ✅ 数据库连接成功!
