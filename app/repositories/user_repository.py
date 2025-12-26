@@ -30,9 +30,11 @@ class UserRepository:
         )
         return result.scalars().first()
 
-    async def get_list(self, page: int = 1, size: int = 10) -> Tuple[List[User], int]:
+    async def get_list(
+        self, page: int = 1, page_size: int = 10
+    ) -> Tuple[List[User], int]:
         # 计算偏移量
-        offset = (page - 1) * size
+        offset = (page - 1) * page_size
 
         # 查询总数
         count_result = await self.db.execute(
@@ -45,7 +47,7 @@ class UserRepository:
             select(User)
             .where(User.is_deleted == False)
             .offset(offset)
-            .limit(size)
+            .limit(page_size)
             .order_by(User.id.desc())
         )
         items = result.scalars().all()

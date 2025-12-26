@@ -24,14 +24,14 @@ class UserService:
             raise AppError(f"用户 ID {user_id} 不存在")
         return user
 
-    async def list_users(self, page: int, size: int):
-        items, total = await self.repo.get_list(page, size)
-        total_page = (total + size - 1) // size
+    async def list_users(self, page: int, page_size: int):
+        items, total = await self.repo.get_list(page, page_size)
+        total_page = (total + page_size - 1) // page_size
         return {
             "items": items,
             "total": total,
             "page": page,
-            "size": size,
+            "page_size": page_size,
             "total_page": total_page,
         }
 

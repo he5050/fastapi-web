@@ -19,11 +19,11 @@ async def create_user(obj_in: UserCreate, db: AsyncSession = Depends(get_db)):
 @router.get("/list", response_model=PageResponse[UserOut], summary="获取用户列表")
 async def list_users(
     page: int = Query(1, ge=1, description="页码"),
-    size: int = Query(10, ge=1, le=100, description="每页数量"),
+    page_size: int = Query(10, alias="pageSize", ge=1, le=100, description="每页数量"),
     db: AsyncSession = Depends(get_db),
 ):
     service = UserService(db)
-    data = await service.list_users(page, size)
+    data = await service.list_users(page, page_size)
     return BaseResponse.success_res(data=data)
 
 

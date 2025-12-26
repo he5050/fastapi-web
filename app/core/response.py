@@ -30,7 +30,7 @@ class PageData(BaseSchema, Generic[T]):
     items: list[T]
     total: int
     page: int
-    size: int
+    page_size: int
     total_page: int
 
 
