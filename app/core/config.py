@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     # 基础配置
     APP_NAME: str = "FastAPI Web"
-    APP_ENV: str = "dev"
+    APP_ENV: str = "local"
     APP_PORT: int = 8000
     DEBUG: bool = True
 
@@ -31,8 +31,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
 
     # 自动识别环境并加载对应的 .env 文件
+    # 优先使用 local 环境，如果不存在则使用 dev
     model_config = SettingsConfigDict(
-        env_file=os.path.join(BASE_DIR, f".env.{os.getenv('APP_ENV', 'dev')}"),
+        env_file=os.path.join(BASE_DIR, f".env.{os.getenv('APP_ENV', 'local')}"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -50,9 +51,14 @@ def get_settings():
     """
     缓存配置单例
     """
-    # 如果环境变量未设置，默认使用 dev
+    # 如果环境变量未设置，优先使用 local，如果不存在则使用 dev
     if not os.getenv("APP_ENV"):
-        os.environ["APP_ENV"] = "dev"
+        # 检查 local 环境文件是否存在
+        local_env_file = BASE_DIR / ".env.local"
+        if local_env_file.exists():
+            os.environ["APP_ENV"] = "local"
+        else:
+            os.environ["APP_ENV"] = "dev"
     return Settings()
 
 
