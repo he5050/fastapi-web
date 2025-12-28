@@ -1,3 +1,5 @@
+false</ask>
+<![CDATA[
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func
 from app.models.user_model import User
@@ -14,7 +16,7 @@ class UserRepository:
 
     async def get_by_id(self, user_id: int) -> Optional[User]:
         result = await self.db.execute(
-            select(User).where(User.id == user_id, User.is_deleted == False)
+            select(User).where(User.user_id == user_id, User.is_deleted == False)
         )
         return result.scalars().first()
 
@@ -38,7 +40,7 @@ class UserRepository:
 
         # 查询总数
         count_result = await self.db.execute(
-            select(func.count(User.id)).where(User.is_deleted == False)
+            select(func.count(User.user_id)).where(User.is_deleted == False)
         )
         total = count_result.scalar() or 0
 
@@ -48,7 +50,7 @@ class UserRepository:
             .where(User.is_deleted == False)
             .offset(offset)
             .limit(page_size)
-            .order_by(User.id.desc())
+            .order_by(User.user_id.desc())
         )
         items = result.scalars().all()
         return list(items), total
@@ -60,16 +62,16 @@ class UserRepository:
         return user
 
     async def update(self, user_id: int, obj_in: dict[str, Any]) -> Optional[User]:
-        await self.db.execute(update(User).where(User.id == user_id).values(**obj_in))
+        await self.db.execute(update(User).where(User.user_id == user_id).values(**obj_in))
         await self.db.commit()
         return await self.get_by_id(user_id)
 
     async def delete(self, user_id: int) -> bool:
         # 软删除
         result = await self.db.execute(
-            update(User).where(User.id == user_id).values(is_deleted=True)
+            update(User).where(User.user_id == user_id).values(is_deleted=True)
         )
         await self.db.commit()
         # SQLAlchemy 异步执行返回的 result 对象中包含 rowcount
         rowcount = getattr(result, "rowcount", 0)
-        return bool(rowcount)
+        return bool(rowcount) return bool(rowcount)

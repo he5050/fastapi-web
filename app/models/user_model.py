@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean
+false</ask>
+<![CDATA[
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Index
 from sqlalchemy.sql import func
 from app.db.session import Base
 
@@ -9,8 +11,13 @@ class User(Base):
     """
 
     __tablename__ = "sys_users"
+    
+    __table_args__ = (
+        Index('idx_user_name_email', 'user_name', 'email'),  # 复合索引
+        Index('idx_created_at', 'created_at'),               # 时间索引
+    )
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, primary_key=True, index=True, autoincrement=True, comment="用户ID")
     user_name = Column(
         String(50), unique=True, index=True, nullable=False, comment="用户名"
     )
@@ -27,4 +34,5 @@ class User(Base):
         onupdate=func.now(),
         server_default=func.now(),
         comment="更新时间",
+    )nt="更新时间",
     )

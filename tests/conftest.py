@@ -133,6 +133,10 @@ class UserFactory:
         data = UserFactory.create_user_dict(hashed_password=hashed_password, **overrides)
         data.pop("password")  # 移除明文密码
         
+        # 确保user_id字段存在
+        if "user_id" not in overrides:
+            data["user_id"] = overrides.get("id", 1)
+        
         return User(**data)
 
 

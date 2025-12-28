@@ -25,7 +25,7 @@ class TestUserModel:
         user = User()
         
         # 测试所有字段都存在且类型正确
-        assert hasattr(user, 'id')
+        assert hasattr(user, 'user_id')
         assert hasattr(user, 'user_name')
         assert hasattr(user, 'email')
         assert hasattr(user, 'hashed_password')
@@ -45,12 +45,12 @@ class TestUserModel:
         
         # 检查主键
         primary_key_columns = [key.name for key in mapper.primary_key]
-        assert 'id' in primary_key_columns
+        assert 'user_id' in primary_key_columns
         
         # 检查字段属性
         columns = mapper.columns
-        assert columns['id'].primary_key is True
-        assert columns['id'].autoincrement is True
+        assert columns['user_id'].primary_key is True
+        assert columns['user_id'].autoincrement is True
         assert columns['user_name'].nullable is False
         assert columns['user_name'].unique is True
         assert columns['email'].nullable is True

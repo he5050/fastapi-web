@@ -13,28 +13,34 @@ class Settings(BaseSettings):
     """
 
     # 基础配置
-    APP_NAME: str = "FastAPI Web"
-    APP_ENV: str = "local"
-    APP_PORT: int = 8000
-    DEBUG: bool = True
+    APP_NAME: str = "FastAPI Web"  # 应用名称
+    APP_ENV: str = "local"  # 环境变量
+    APP_PORT: int = 8000  # 应用端口
+    DEBUG: bool = True  # 是否开启调试模式
 
     # 数据库配置
-    DB_HOST: str = "127.0.0.1"
-    DB_PORT: int = 3306
-    DB_USER: str = "root"
-    DB_PASSWORD: str = ""
-    DB_NAME: str = "test"
-    DB_CHARSET: str = "utf8mb4"
-    DB_INIT: bool = False
+    DB_HOST: str = "127.0.0.1"  # 数据库地址
+    DB_PORT: int = 3306  # 数据库端口
+    DB_USER: str = "root"  # 数据库用户名
+    DB_PASSWORD: str = ""  # 数据库密码
+    DB_NAME: str = "test"  # 数据库名称
+    DB_CHARSET: str = "utf8mb4"  # 数据库编码
+    DB_INIT: bool = False  # 是否初始化数据库
+
+    # 数据库连接池配置
+    DB_POOL_SIZE: int = 20  # 连接池大小
+    DB_MAX_OVERFLOW: int = 40  # 连接池最大溢出量
+    DB_POOL_TIMEOUT: int = 30  # 连接池超时时间
+    DB_POOL_RECYCLE: int = 3600  # 连接池重用时间
 
     # 日志配置
-    LOG_LEVEL: str = "INFO"
+    LOG_LEVEL: str = "INFO"  # 日志级别
 
     # CORS配置
     CORS_ORIGINS: list[str] = ["*"]  # 生产环境应该具体配置
-    CORS_ALLOW_CREDENTIALS: bool = True
-    CORS_ALLOW_METHODS: list[str] = ["*"]
-    CORS_ALLOW_HEADERS: list[str] = ["*"]
+    CORS_ALLOW_CREDENTIALS: bool = True  # 是否允许凭据
+    CORS_ALLOW_METHODS: list[str] = ["*"]  # 允许的方法
+    CORS_ALLOW_HEADERS: list[str] = ["*"]  # 允许的头部
 
     # 自动识别环境并加载对应的 .env 文件
     # 优先使用 local 环境，如果不存在则使用 dev
