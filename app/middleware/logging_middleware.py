@@ -57,37 +57,26 @@ class LoggingMiddleware:
 
         # 解析请求参数
         request_params = {}
+        cached_body = b""
         try:
             if request_method in ["GET", "DELETE"]:
                 request_params = dict(request.query_params)
             elif request_method in ["POST", "PUT", "PATCH"]:
                 # 尝试读取JSON body
-                body = await request.body()
-                if body:
+                cached_body = await request.body()
+                if cached_body:
                     try:
-                        request_params = await request.json()
+                        request_params = json.loads(cached_body)
                     except:
                         # 如果不是JSON，尝试form data
                         try:
-                            request_params = await request.form()
-                            request_params = dict(request_params)
+                            # Note: request.form() also consumes body, so we use cached_body
+                            # But for simplicity in logging, we just record if it's not JSON
+                            pass
                         except:
                             pass
         except Exception as e:
             logger.warning(f"解析请求参数失败: {str(e)}")
-
-        # 获取路由信息（访问模块和操作类型）
-        route = request.scope.get("route")
-        visit_module = None
-        operation_type = None
-        if route:
-            # 从 tags 中获取访问模块
-            visit_module = route.tags[0] if route.tags else None
-            # 从 summary 中获取操作类型（如"新增用户"、"获取用户列表"等）
-            operation_type = getattr(route, "summary", None)
-            # 如果 summary 不存在，尝试使用 operation_id（函数名）
-            if not operation_type:
-                operation_type = getattr(route, "operation_id", None)
 
         # 存储原始send函数
         response_body = bytearray()
@@ -102,14 +91,39 @@ class LoggingMiddleware:
                     response_body.extend(message["body"])
             await send(message)
 
+        # 创建一个新的 receive 函数，用于将缓存的 body 传递给后续的 handler
+        # 我们需要确保只返回一次 body，后续的调用应该由原始的 receive 处理（例如 http.disconnect）
+        body_sent = False
+
+        async def receive_wrapper():
+            nonlocal body_sent
+            if not body_sent:
+                body_sent = True
+                return {"type": "http.request", "body": cached_body, "more_body": False}
+            return await receive()
+
         # 执行请求
         try:
-            await self.app(scope, receive, send_wrapper)
+            await self.app(scope, receive_wrapper, send_wrapper)
         except Exception as e:
             # 如果请求过程中发生异常，记录异常信息
             logger.error(f"请求处理异常: {str(e)}")
             status_code = 500
-            response_body = str(e).encode("utf-8")
+            response_body = bytearray(str(e).encode("utf-8"))
+
+        # 获取路由信息（访问模块和操作类型）
+        # 在执行完 self.app 之后，scope 中才会被 FastAPI 注入路由信息
+        route = request.scope.get("route")
+        visit_module = None
+        operation_type = None
+        if route:
+            # 从 tags 中获取访问模块
+            visit_module = route.tags[0] if route.tags else None
+            # 从 summary 中获取操作类型（如"新增用户"、"获取用户列表"等）
+            operation_type = getattr(route, "summary", None)
+            # 如果 summary 不存在，尝试使用 operation_id（函数名）
+            if not operation_type:
+                operation_type = getattr(route, "operation_id", None)
 
         # 计算耗时
         duration = int((time.time() - start_time) * 1000)
