@@ -1,6 +1,6 @@
 import logging
 from typing import AsyncGenerator
-
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
@@ -48,7 +48,6 @@ async def check_db_connection() -> bool:
     检查数据库连接状态 (启动时调用)
     """
     try:
-        from sqlalchemy import text
 
         async with engine.connect() as conn:
             _ = await conn.execute(text("SELECT 1"))

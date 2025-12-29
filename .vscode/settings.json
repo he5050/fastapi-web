@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "aiomysql",
+    "ASGI",
     "Asyncio",
     "basedpyright",
     "fastapi",
@@ -13,6 +14,7 @@
     "Pydantic",
     "pytest",
     "Qube",
+    "sessionmaker",
     "uvicorn",
     "venv"
   ]

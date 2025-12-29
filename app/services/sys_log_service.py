@@ -117,19 +117,13 @@ class SysLogService:
         Returns:
             删除的记录数
         """
-        # 如果指定了具体时间范围，按时间范围删除
-        if obj_in.start_time or obj_in.end_time:
-            # 时间范围校验
-            if obj_in.start_time and obj_in.end_time:
-                if obj_in.start_time > obj_in.end_time:
-                    raise AppError("开始时间不能晚于结束时间")
+        # 时间范围校验
+        if obj_in.start_time > obj_in.end_time:
+            raise AppError("开始时间不能晚于结束时间")
 
-            deleted_count = await self.repo.delete_by_time_range(
-                start_time=obj_in.start_time, end_time=obj_in.end_time
-            )
-        else:
-            # 否则按天数删除
-            deleted_count = await self.repo.delete_logs_before_days(obj_in.days or 7)
+        deleted_count = await self.repo.delete_by_time_range(
+            start_time=obj_in.start_time, end_time=obj_in.end_time
+        )
 
         if deleted_count == 0:
             raise AppError("未找到符合清理条件的日志记录")
