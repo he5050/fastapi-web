@@ -1,5 +1,3 @@
-false</ask>
-<![CDATA[
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Index
 from sqlalchemy.sql import func
 from app.db.session import Base
@@ -34,5 +32,4 @@ class User(Base):
         onupdate=func.now(),
         server_default=func.now(),
         comment="更新时间",
-    )nt="更新时间",
     )

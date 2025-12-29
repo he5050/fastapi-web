@@ -81,11 +81,37 @@ def print_config_info():
     """
     打印基础配置信息 (启动时调用)
     """
-    print("=" * 50)
+    print("=" * 60)
     print("🚀 应用启动中...")
     print(f"🌍 当前环境: {settings.APP_ENV}")
-    print(f"🛠️  调试模式: {'开启' if settings.DEBUG else '关闭'}")
-    print(f"📦 数据库: {settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}")
+    print(f"📦 应用名称: {settings.APP_NAME}")
+    print(f"🔧 调试模式: {'开启' if settings.DEBUG else '关闭'}")
+    print(f"🌐 服务端口: {settings.APP_PORT}")
+
+    # 数据库配置信息
+    print("🗄️ 数据库配置:")
+    print(f"   📍 地址: {settings.DB_HOST}:{settings.DB_PORT}")
+    print(f"   📂 名称: {settings.DB_NAME}")
+    print(f"   👤 用户: {settings.DB_USER}")
+    print(
+        f"   🔑 密码: {'*' * len(settings.DB_PASSWORD) if settings.DB_PASSWORD else '未设置'}"
+    )
+    print(f"   📝 编码: {settings.DB_CHARSET}")
+
+    # 连接池配置
+    print("🔗 连接池配置:")
+    print(f"   📊 池大小: {settings.DB_POOL_SIZE}")
+    print(f"   📈 最大溢出: {settings.DB_MAX_OVERFLOW}")
+    print(f"   ⏱️  超时: {settings.DB_POOL_TIMEOUT}s")
+    print(f"   🔄 回收时间: {settings.DB_POOL_RECYCLE}s")
+
+    # 数据库初始化状态
+    print(f"📋 数据库初始化: {'启用' if settings.DB_INIT else '禁用'}")
+
+    # 日志和其他配置
     print(f"📜 日志级别: {settings.LOG_LEVEL}")
+    print(
+        f"🌍 CORS允许源: {', '.join(settings.CORS_ORIGINS[:3])}{'...' if len(settings.CORS_ORIGINS) > 3 else ''}"
+    )
     print(f"📄 API文档: http://127.0.0.1:{settings.APP_PORT}/docs")
-    print("=" * 50)
+    print("=" * 60)

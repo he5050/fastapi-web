@@ -1,5 +1,3 @@
-false</ask>
-<![CDATA[
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func
 from app.models.user_model import User
@@ -62,7 +60,9 @@ class UserRepository:
         return user
 
     async def update(self, user_id: int, obj_in: dict[str, Any]) -> Optional[User]:
-        await self.db.execute(update(User).where(User.user_id == user_id).values(**obj_in))
+        await self.db.execute(
+            update(User).where(User.user_id == user_id).values(**obj_in)
+        )
         await self.db.commit()
         return await self.get_by_id(user_id)
 
@@ -74,4 +74,4 @@ class UserRepository:
         await self.db.commit()
         # SQLAlchemy 异步执行返回的 result 对象中包含 rowcount
         rowcount = getattr(result, "rowcount", 0)
-        return bool(rowcount) return bool(rowcount)
+        return bool(rowcount)
