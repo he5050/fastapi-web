@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from starlette.types import ASGIApp
 
 from app.core.config import settings
-from app.models.sys_log_model import SysLog
-from app.repositories.sys_log_repository import SysLogRepository
+from app.models.log_model import SysLog
+from app.repositories.log_repository import SysLogRepository
 
 logger = logging.getLogger(__name__)
 

@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.response import BaseResponse, PageData, PageResponse
 from app.db.session import get_db
 from app.schemas.base_schema import PaginationParams
-from app.schemas.sys_log_schema import LogBatchDelete, LogCleanupByTime, SysLogOut
-from app.services.sys_log_service import SysLogService
+from app.schemas.log_schema import LogBatchDelete, LogCleanupByTime, SysLogOut
+from app.services.log_service import SysLogService
 
 router = APIRouter(prefix="/sys-logs", tags=["日志管理"])
 

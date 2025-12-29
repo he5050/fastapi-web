@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.health_router import router as health_router
-from app.api.sys_log_router import router as sys_log_router
+from app.api.log_router import router as log_router
 from app.api.user_router import router as user_router
 from app.core.config import print_config_info, settings
 from app.core.exceptions import AppError, global_exception_handler
@@ -17,7 +17,7 @@ from app.db.session import check_db_connection
 from app.middleware.logging_middleware import LoggingMiddleware
 
 # 导入日志模型以确保表结构被创建
-from app.models.sys_log_model import SysLog  # noqa
+from app.models.log_model import SysLog  # noqa
 
 
 @asynccontextmanager
@@ -70,7 +70,7 @@ app.add_exception_handler(Exception, global_exception_handler)
 # 注册路由
 app.include_router(user_router)
 app.include_router(health_router)
-app.include_router(sys_log_router)
+app.include_router(log_router)
 
 # 添加日志中间件
 app.add_middleware(LoggingMiddleware)

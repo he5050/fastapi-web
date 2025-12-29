@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 from sqlalchemy import and_, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.sys_log_model import SysLog
+from app.models.log_model import SysLog
 
 
 class SysLogRepository:

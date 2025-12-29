@@ -4,8 +4,8 @@ from typing import Any, Dict, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppError
-from app.repositories.sys_log_repository import SysLogRepository
-from app.schemas.sys_log_schema import LogBatchDelete, LogCleanupByTime
+from app.repositories.log_repository import SysLogRepository
+from app.schemas.log_schema import LogBatchDelete, LogCleanupByTime
 
 
 class SysLogService:

@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import settings
 from app.db.session import Base, engine
-from app.models.sys_log_model import SysLog  # noqa
+from app.models.log_model import SysLog  # noqa
 
 # 导入模型以确保 Base.metadata 包含所有表
 from app.models.user_model import User  # noqa
