@@ -101,25 +101,52 @@ APP_ENV=dev uv run uvicorn app.main:app --reload
 
 ## 代码质量保证
 
-项目集成了以下静态代码分析工具，确保代码健壮性：
+项目集成了完整的代码质量工具集，确保代码健壮性和规范性：
 
-- **Mypy**: 严格的静态类型检查。
-- **Pyright (BasedPyright)**: 高性能的异步代码类型推断。
-- **SonarQube**: 预设了 `sonar-project.properties` 配置文件。
+### 类型检查工具
+- **Mypy**: 严格的静态类型检查
+- **Pyright (BasedPyright)**: 高性能的异步代码类型推断
 
-运行类型检查：
+### 代码质量工具
+- **Black**: 代码自动格式化工具，统一代码风格
+- **isort**: Python import 语句自动排序
+- **flake8**: 代码风格检查，遵循 PEP 8 规范
+- **bandit**: 安全漏洞扫描工具，检测常见安全问题
+
+### 运行代码检查
 
 ```bash
 # 1. 运行单次检查并直接查看输出
 uv run mypy app
 uv run basedpyright
 
-# 2. 运行自动化检查并生成时间戳报告 (推荐)
+# 2. 运行自动化检查并生成时间戳报告 (仅检查)
 chmod +x check.sh
 ./check.sh
+
+# 3. 运行自动化检查并自动修复问题
+./check.sh --fix
 ```
 
 生成的报告将保存在 `docs/` 目录下，文件名为 `类型检查_年月日_时分秒.md`。
+
+### 单独使用各工具
+
+```bash
+# 格式化代码（自动修复）
+uv run black app/
+
+# 排序导入（自动修复）
+uv run isort app/
+
+# 检查代码风格（仅检查）
+uv run flake8 app/
+
+# 扫描安全漏洞（仅检查）
+uv run bandit -r app/
+```
+
+**注意**: 类型检查和安全扫描工具（mypy、basedpyright、bandit）不会自动修复代码，需要手动处理发现的问题。
 
 ## 测试指南
 

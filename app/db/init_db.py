@@ -1,12 +1,14 @@
 import asyncio
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
+
 from app.core.config import settings
-from app.db.session import engine, Base
+from app.db.session import Base, engine
+from app.models.sys_log_model import SysLog  # noqa
 
 # 导入模型以确保 Base.metadata 包含所有表
 from app.models.user_model import User  # noqa
-from app.models.sys_log_model import SysLog  # noqa
 
 
 async def create_database_if_not_exists():

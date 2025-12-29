@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Index
+from sqlalchemy import Boolean, Column, DateTime, Index, Integer, String
 from sqlalchemy.sql import func
+
 from app.db.session import Base
 
 
@@ -9,13 +10,15 @@ class User(Base):
     """
 
     __tablename__ = "sys_users"
-    
+
     __table_args__ = (
-        Index('idx_user_name_email', 'user_name', 'email'),  # 复合索引
-        Index('idx_created_at', 'created_at'),               # 时间索引
+        Index("idx_user_name_email", "user_name", "email"),  # 复合索引
+        Index("idx_created_at", "created_at"),  # 时间索引
     )
 
-    user_id = Column(Integer, primary_key=True, index=True, autoincrement=True, comment="用户ID")
+    user_id = Column(
+        Integer, primary_key=True, index=True, autoincrement=True, comment="用户ID"
+    )
     user_name = Column(
         String(50), unique=True, index=True, nullable=False, comment="用户名"
     )

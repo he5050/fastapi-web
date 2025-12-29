@@ -1,18 +1,20 @@
+from contextlib import asynccontextmanager
+
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
-from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings, print_config_info
-from app.core.exceptions import global_exception_handler, AppError
-from app.core.logger import setup_structlog, get_logger
-from app.db.session import check_db_connection
-from app.api.user_router import router as user_router
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from app.api.health_router import router as health_router
 from app.api.sys_log_router import router as sys_log_router
-from app.middleware.logging_middleware import LoggingMiddleware
-from contextlib import asynccontextmanager
+from app.api.user_router import router as user_router
+from app.core.config import print_config_info, settings
+from app.core.exceptions import AppError, global_exception_handler
+from app.core.logger import get_logger, setup_structlog
 from app.db.init_db import run_init_db
-import uvicorn
+from app.db.session import check_db_connection
+from app.middleware.logging_middleware import LoggingMiddleware
 
 # 导入日志模型以确保表结构被创建
 from app.models.sys_log_model import SysLog  # noqa

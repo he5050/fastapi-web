@@ -1,11 +1,12 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.response import BaseResponse, PageData, PageResponse
 from app.db.session import get_db
+from app.schemas.user_schema import UserCreate, UserOut, UserUpdate
 from app.services.user_service import UserService
-from app.schemas.user_schema import UserCreate, UserUpdate, UserOut
-from app.core.response import BaseResponse, PageResponse
-from typing import Any
-from app.core.response import PageData
 
 router = APIRouter(prefix="/users", tags=["用户管理"])
 

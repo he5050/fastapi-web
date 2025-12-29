@@ -26,6 +26,10 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=6.0.0",
+    "black>=24.0.0",
+    "isort>=5.13.0",
+    "flake8>=7.0.0",
+    "bandit>=1.7.0",
 ]
 
 [tool.mypy]
@@ -40,3 +44,45 @@ exclude = ["**/node_modules", "**/__pycache__"]
 typeCheckingMode = "basic"
 pythonVersion = "3.12"
 pythonPlatform = "Darwin"
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+skip = ["venv", ".venv"]
+
+[tool.flake8]
+max-line-length = 88
+exclude = [".git", "__pycache__", "venv", ".venv"]
+ignore = ["E203", "W503"]
+per-file-ignores = [
+    "__init__.py:F401"
+]
+
+[tool.bandit]
+exclude_dirs = ["venv", ".venv", "tests"]
+skips = ["B101"]

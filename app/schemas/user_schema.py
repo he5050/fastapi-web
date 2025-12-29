@@ -1,10 +1,10 @@
-from typing import Optional, Any
-from pydantic import EmailStr, Field, field_validator
 from datetime import datetime
-from app.schemas.base_schema import BaseSchema
+from typing import Any, Optional
 
+from pydantic import EmailStr, Field, field_validator
 
 from app.core.validator import ValidationRule, validate_rules
+from app.schemas.base_schema import BaseSchema
 
 
 class UserBase(BaseSchema):

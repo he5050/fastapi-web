@@ -5,6 +5,8 @@
     "basedpyright",
     "fastapi",
     "htmlcov",
+    "isort",
+    "ISORT",
     "mypy",
     "Mypy",
     "pycache",

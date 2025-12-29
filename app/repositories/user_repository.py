@@ -1,7 +1,9 @@
+from typing import Any, List, Optional, Tuple
+
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func
+
 from app.models.user_model import User
-from typing import List, Optional, Tuple, Any
 
 
 class UserRepository:

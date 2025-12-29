@@ -1,15 +1,17 @@
-import time
 import json
+import logging
+import time
+from datetime import datetime
+from typing import Optional
+
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from starlette.types import ASGIApp
-from datetime import datetime
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from typing import Optional
+
+from app.core.config import settings
 from app.models.sys_log_model import SysLog
 from app.repositories.sys_log_repository import SysLogRepository
-from app.core.config import settings
-import logging
 
 logger = logging.getLogger(__name__)
 

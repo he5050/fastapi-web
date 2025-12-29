@@ -1,5 +1,5 @@
-from typing import Any, List, Optional, Callable, Union
 import re
+from typing import Any, Callable, List, Optional, Union
 
 
 class ValidationRule:

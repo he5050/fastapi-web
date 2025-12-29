@@ -1,11 +1,13 @@
+import re
+from typing import Any
+
+import bcrypt
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.exceptions import AppError
+from app.models.user_model import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.user_schema import UserCreate, UserUpdate
-from app.models.user_model import User
-from app.core.exceptions import AppError
-from typing import Any
-import bcrypt
-import re
 
 
 class UserService:
@@ -19,24 +21,24 @@ class UserService:
     def _hash_password(self, password: str) -> str:
         """使用bcrypt进行安全密码哈希"""
         # bcrypt只支持72字节以内的密码，需要截断
-        password_bytes = password.encode('utf-8')
+        password_bytes = password.encode("utf-8")
         if len(password_bytes) > 72:
             password_bytes = password_bytes[:72]
-        
+
         # 生成盐值并哈希
         salt = bcrypt.gensalt()
         hashed = bcrypt.hashpw(password_bytes, salt)
-        return hashed.decode('utf-8')
-    
+        return hashed.decode("utf-8")
+
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """验证密码"""
-        password_bytes = plain_password.encode('utf-8')
+        password_bytes = plain_password.encode("utf-8")
         if len(password_bytes) > 72:
             password_bytes = password_bytes[:72]
-        hashed_bytes = hashed_password.encode('utf-8')
-        
+        hashed_bytes = hashed_password.encode("utf-8")
+
         return bcrypt.checkpw(password_bytes, hashed_bytes)
-    
+
     def _validate_password_strength(self, password: str) -> None:
         """验证密码强度"""
         if len(password) < 8:
@@ -52,8 +54,13 @@ class UserService:
             raise AppError("密码必须包含至少一个特殊字符")
         # 检查是否包含常见弱密码模式（使用更精确的匹配）
         weak_patterns = [
-            r'^123456', r'^password', r'^admin', r'^qwerty',
-            r'^abc123', r'^111111', r'^000000'
+            r"^123456",
+            r"^password",
+            r"^admin",
+            r"^qwerty",
+            r"^abc123",
+            r"^111111",
+            r"^000000",
         ]
         for pattern in weak_patterns:
             if re.search(pattern, password, re.IGNORECASE):
@@ -79,7 +86,7 @@ class UserService:
     async def create_user(self, obj_in: UserCreate) -> User:
         # 1. 验证密码强度
         self._validate_password_strength(obj_in.password)
-        
+
         # 2. 检查用户名唯一性
         existing_user = await self.repo.get_by_user_name(obj_in.user_name)
         if existing_user:
