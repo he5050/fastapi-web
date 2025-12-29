@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from pydantic import Field, field_validator
 
@@ -40,12 +40,16 @@ class LogCleanupByTime(BaseSchema):
     按时间清理日志请求 Schema
     """
 
-    start_time: datetime = Field(..., description="开始时间，格式：YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DDTHH:MM:SS")
-    end_time: datetime = Field(..., description="结束时间，格式：YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DDTHH:MM:SS")
+    start_time: datetime = Field(
+        ..., description="开始时间，格式：YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DDTHH:MM:SS"
+    )
+    end_time: datetime = Field(
+        ..., description="结束时间，格式：YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DDTHH:MM:SS"
+    )
 
     @field_validator("start_time", "end_time", mode="before")
     @classmethod
-    def parse_datetime(cls, v: str) -> datetime:
+    def parse_datetime(cls, v: Any) -> datetime:
         """
         解析多种日期时间格式
         支持格式：
@@ -57,15 +61,18 @@ class LogCleanupByTime(BaseSchema):
         if isinstance(v, datetime):
             return v
 
+        if v is None:
+            raise ValueError("时间不能为空")
+
         if not isinstance(v, str):
             raise ValueError("时间格式必须是字符串")
 
         # 尝试多种格式
         formats = [
-            "%Y-%m-%d %H:%M:%S",           # 2025-12-29 21:45:06
-            "%Y-%m-%dT%H:%M:%S",          # 2025-12-29T21:45:06
-            "%Y-%m-%d %H:%M:%S.%f",       # 2025-12-29 21:45:06.123
-            "%Y-%m-%dT%H:%M:%S.%f",       # 2025-12-29T21:45:06.123
+            "%Y-%m-%d %H:%M:%S",  # 2025-12-29 21:45:06
+            "%Y-%m-%dT%H:%M:%S",  # 2025-12-29T21:45:06
+            "%Y-%m-%d %H:%M:%S.%f",  # 2025-12-29 21:45:06.123
+            "%Y-%m-%dT%H:%M:%S.%f",  # 2025-12-29T21:45:06.123
         ]
 
         for fmt in formats:

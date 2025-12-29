@@ -73,6 +73,7 @@ async def cleanup_logs(
     """
     清理指定时间范围内的日志
     """
+    print(obj_in)
     service = SysLogService(db)
     deleted_count = await service.cleanup_logs(obj_in)
     return BaseResponse.success_res(
