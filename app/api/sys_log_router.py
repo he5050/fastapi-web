@@ -16,13 +16,13 @@ router = APIRouter(prefix="/sys-logs", tags=["日志管理"])
 @router.get("/list", response_model=PageResponse[SysLogOut], summary="获取日志列表")
 async def list_logs(
     pagination: PaginationParams = Depends(),
-    request_url: Optional[str] = Query(None, description="请求URL筛选"),
-    request_method: Optional[str] = Query(None, description="请求方法筛选"),
-    visit_module: Optional[str] = Query(None, description="访问模块筛选"),
-    operation_status: Optional[str] = Query(None, description="操作状态筛选"),
-    client_ip: Optional[str] = Query(None, description="客户端IP筛选"),
-    start_time: Optional[str] = Query(None, description="开始时间(ISO格式)"),
-    end_time: Optional[str] = Query(None, description="结束时间(ISO格式)"),
+    requestUrl: Optional[str] = Query(None, description="请求URL筛选"),
+    requestMethod: Optional[str] = Query(None, description="请求方法筛选"),
+    visitModule: Optional[str] = Query(None, description="访问模块筛选"),
+    operationStatus: Optional[str] = Query(None, description="操作状态筛选"),
+    clientIp: Optional[str] = Query(None, description="客户端IP筛选"),
+    startTime: Optional[str] = Query(None, description="开始时间(YYYY-MM-DD HH:mm:ss)"),
+    endTime: Optional[str] = Query(None, description="结束时间(YYYY-MM-DD HH:mm:ss)"),
     db: AsyncSession = Depends(get_db),
 ) -> PageResponse[SysLogOut]:
     """
@@ -32,20 +32,20 @@ async def list_logs(
 
     # 构建过滤条件
     filters = {}
-    if request_url:
-        filters["request_url"] = request_url
-    if request_method:
-        filters["request_method"] = request_method
-    if visit_module:
-        filters["visit_module"] = visit_module
-    if operation_status:
-        filters["operation_status"] = operation_status
-    if client_ip:
-        filters["client_ip"] = client_ip
-    if start_time:
-        filters["start_time"] = start_time
-    if end_time:
-        filters["end_time"] = end_time
+    if requestUrl:
+        filters["request_url"] = requestUrl
+    if requestMethod:
+        filters["request_method"] = requestMethod
+    if visitModule:
+        filters["visit_module"] = visitModule
+    if operationStatus:
+        filters["operation_status"] = operationStatus
+    if clientIp:
+        filters["client_ip"] = clientIp
+    if startTime:
+        filters["start_time"] = startTime
+    if endTime:
+        filters["end_time"] = endTime
 
     data = await service.get_logs(pagination.page, pagination.page_size, **filters)
     page_data = PageData[SysLogOut](**data)
