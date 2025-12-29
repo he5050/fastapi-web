@@ -8,6 +8,7 @@ from app.core.logger import setup_structlog, get_logger
 from app.db.session import check_db_connection
 from app.api.user_router import router as user_router
 from app.api.health_router import router as health_router
+from app.api.sys_log_router import router as sys_log_router
 from app.middleware.logging_middleware import LoggingMiddleware
 from contextlib import asynccontextmanager
 from app.db.init_db import run_init_db
@@ -67,6 +68,7 @@ app.add_exception_handler(Exception, global_exception_handler)
 # 注册路由
 app.include_router(user_router)
 app.include_router(health_router)
+app.include_router(sys_log_router)
 
 # 添加日志中间件
 app.add_middleware(LoggingMiddleware)
