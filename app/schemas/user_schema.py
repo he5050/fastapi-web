@@ -89,7 +89,7 @@ class UserOut(UserBase):
     """
 
     user_name: str
-    id: int
+    user_id: int
     is_active: bool
     created_at: datetime
     updated_at: datetime
