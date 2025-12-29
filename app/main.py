@@ -4,6 +4,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings, print_config_info
 from app.core.exceptions import global_exception_handler, AppError
+from app.core.logger import setup_structlog, get_logger
 from app.db.session import check_db_connection
 from app.api.user_router import router as user_router
 from contextlib import asynccontextmanager
@@ -16,7 +17,12 @@ async def lifespan(app: FastAPI):
     """
     应用生命周期管理
     """
+    # 初始化结构化日志
+    setup_structlog()
+    logger = get_logger(__name__)
+    
     # 启动时
+    logger.info("正在启动应用", app_name=settings.APP_NAME, env=settings.APP_ENV)
     print_config_info()
 
     # 根据配置执行数据库初始化
@@ -24,9 +30,10 @@ async def lifespan(app: FastAPI):
         await run_init_db()
 
     await check_db_connection()
+    logger.info("应用启动成功")
     yield
     # 关闭时
-    print("🛑 应用正在关闭...")
+    logger.info("应用正在关闭...")
 
 
 app = FastAPI(

@@ -22,6 +22,20 @@ set +a
 APP_PORT=${APP_PORT:-8000}
 APP_ENV=${APP_ENV:-$ENV_ARG}
 
+# 检查端口是否被占用
+echo "🔍 检查端口 $APP_PORT 是否被占用..."
+PID=$(lsof -ti:$APP_PORT 2>/dev/null)
+
+if [ ! -z "$PID" ]; then
+    echo "⚠️  端口 $APP_PORT 被进程 $PID 占用，正在终止..."
+    kill -9 $PID
+    echo "✅ 已成功终止进程 $PID"
+    # 等待一小段时间确保端口被释放
+    sleep 1
+else
+    echo "✅ 端口 $APP_PORT 可用"
+fi
+
 echo "🚀 Using uv to start FastAPI in $APP_ENV mode on port $APP_PORT..."
 
 # 使用 uv 启动 uvicorn
