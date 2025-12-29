@@ -6,6 +6,7 @@ from app.db.session import engine, Base
 
 # 导入模型以确保 Base.metadata 包含所有表
 from app.models.user_model import User  # noqa
+from app.models.sys_log_model import SysLog  # noqa
 
 
 async def create_database_if_not_exists():

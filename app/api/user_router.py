@@ -10,7 +10,7 @@ from app.core.response import PageData
 router = APIRouter(prefix="/users", tags=["用户管理"])
 
 
-@router.post("/add", response_model=BaseResponse[UserOut], summary="创建用户")
+@router.post("/add", response_model=BaseResponse[UserOut], summary="新增用户")
 async def create_user(
     obj_in: UserCreate, db: AsyncSession = Depends(get_db)
 ) -> BaseResponse[UserOut]:

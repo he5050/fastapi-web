@@ -7,9 +7,14 @@ from app.core.exceptions import global_exception_handler, AppError
 from app.core.logger import setup_structlog, get_logger
 from app.db.session import check_db_connection
 from app.api.user_router import router as user_router
+from app.api.health_router import router as health_router
+from app.middleware.logging_middleware import LoggingMiddleware
 from contextlib import asynccontextmanager
 from app.db.init_db import run_init_db
 import uvicorn
+
+# 导入日志模型以确保表结构被创建
+from app.models.sys_log_model import SysLog  # noqa
 
 
 @asynccontextmanager
@@ -20,7 +25,7 @@ async def lifespan(app: FastAPI):
     # 初始化结构化日志
     setup_structlog()
     logger = get_logger(__name__)
-    
+
     # 启动时
     logger.info("正在启动应用", app_name=settings.APP_NAME, env=settings.APP_ENV)
     print_config_info()
@@ -61,6 +66,10 @@ app.add_exception_handler(Exception, global_exception_handler)
 
 # 注册路由
 app.include_router(user_router)
+app.include_router(health_router)
+
+# 添加日志中间件
+app.add_middleware(LoggingMiddleware)
 
 
 @app.get("/", tags=["Root"])
