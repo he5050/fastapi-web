@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.response import BaseResponse, PageData, PageResponse
 from app.db.session import get_db
+from app.schemas.base_schema import PaginationParams
 from app.schemas.user_schema import UserCreate, UserOut, UserUpdate
 from app.services.user_service import UserService
 
@@ -22,15 +23,14 @@ async def create_user(
 
 @router.get("/list", response_model=PageResponse[UserOut], summary="获取用户列表")
 async def list_users(
-    page: int = Query(1, ge=1, le=10000, description="页码"),
-    page_size: int = Query(10, ge=1, le=100, alias="pageSize", description="每页数量"),
+    pagination: PaginationParams = Depends(),
     db: AsyncSession = Depends(get_db),
 ) -> PageResponse[UserOut]:
     """
     获取用户列表，参数由 FastAPI 自动验证
     """
     service = UserService(db)
-    data = await service.list_users(page, page_size)
+    data = await service.list_users(pagination.page, pagination.page_size)
     page_data = PageData[UserOut](**data)
     return PageResponse(success=True, data=page_data, message="获取成功")
 

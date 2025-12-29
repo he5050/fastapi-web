@@ -25,3 +25,12 @@ class BaseSchema(BaseModel):
             return value.strftime("%Y-%m-%d")
 
         return value
+
+
+class PaginationParams(BaseSchema):
+    """
+    统一分页查询参数
+    """
+
+    page: int = 1
+    page_size: int = 10

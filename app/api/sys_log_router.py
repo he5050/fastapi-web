@@ -1,11 +1,12 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Body, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.response import BaseResponse, PageData, PageResponse
 from app.db.session import get_db
+from app.schemas.base_schema import PaginationParams
 from app.schemas.sys_log_schema import LogBatchDelete, LogCleanupByTime, SysLogOut
 from app.services.sys_log_service import SysLogService
 
@@ -14,8 +15,7 @@ router = APIRouter(prefix="/sys-logs", tags=["日志管理"])
 
 @router.get("/list", response_model=PageResponse[SysLogOut], summary="获取日志列表")
 async def list_logs(
-    page: int = Query(1, ge=1, le=10000, description="页码"),
-    page_size: int = Query(10, ge=1, le=100, alias="pageSize", description="每页数量"),
+    pagination: PaginationParams = Depends(),
     request_url: Optional[str] = Query(None, description="请求URL筛选"),
     request_method: Optional[str] = Query(None, description="请求方法筛选"),
     visit_module: Optional[str] = Query(None, description="访问模块筛选"),
@@ -47,14 +47,14 @@ async def list_logs(
     if end_time:
         filters["end_time"] = end_time
 
-    data = await service.get_logs(page, page_size, **filters)
+    data = await service.get_logs(pagination.page, pagination.page_size, **filters)
     page_data = PageData[SysLogOut](**data)
     return PageResponse(success=True, data=page_data, message="获取成功")
 
 
 @router.delete("/batch", response_model=BaseResponse[int], summary="批量删除日志")
 async def batch_delete_logs(
-    obj_in: LogBatchDelete, db: AsyncSession = Depends(get_db)
+    obj_in: LogBatchDelete = Body(...), db: AsyncSession = Depends(get_db)
 ) -> BaseResponse[int]:
     """
     批量删除指定ID的日志记录
@@ -66,9 +66,9 @@ async def batch_delete_logs(
     )
 
 
-@router.delete("/cleanup", response_model=BaseResponse[int], summary="清理日志")
+@router.post("/cleanup", response_model=BaseResponse[int], summary="清理日志")
 async def cleanup_logs(
-    obj_in: LogCleanupByTime, db: AsyncSession = Depends(get_db)
+    obj_in: LogCleanupByTime = Body(...), db: AsyncSession = Depends(get_db)
 ) -> BaseResponse[int]:
     """
     清理指定时间范围内的日志
