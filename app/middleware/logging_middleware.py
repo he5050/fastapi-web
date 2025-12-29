@@ -127,10 +127,13 @@ class LoggingMiddleware:
             # 计算耗时
             duration = int((time.time() - start_time) * 1000)
 
+            # 操作结果状态
+            response_status = self._extract_response_status(response_body)
+
             # 处理响应结果
             response_result = self._process_response_body(response_body)
 
-            # 判断操作结果
+            # 判断接口请求状态
             operation_status = "success" if status_code < 400 else "failure"
 
             # 构建并保存日志
@@ -139,6 +142,7 @@ class LoggingMiddleware:
                 request_params=request_params,
                 route_info=route_info,
                 status_code=status_code,
+                response_status=response_status,
                 response_result=response_result,
                 duration=duration,
                 operation_status=operation_status,
@@ -216,12 +220,14 @@ class LoggingMiddleware:
         body_sent = False
 
         async def send_wrapper(message):
-            nonlocal status_code, response_body
+            nonlocal status_code, response_body, body_sent
             if message["type"] == "http.response.start":
                 status_code = message["status"]
             elif message["type"] == "http.response.body":
                 if "body" in message and message["body"]:
                     response_body.extend(message["body"])
+                # 检查是否还有更多body数据
+                body_sent = not message.get("more_body", False)
             await send(message)
 
         async def receive_wrapper():
@@ -264,6 +270,32 @@ class LoggingMiddleware:
         except Exception:
             return str(response_body)
 
+    def _extract_response_status(self, response_body: bytearray) -> str:
+        """从响应体中提取操作结果状态"""
+        try:
+            if not response_body:
+                return "unknown"
+
+            # 尝试解析JSON响应
+            response_text = response_body.decode("utf-8", errors="ignore")
+            response_data = json.loads(response_text)
+
+            # 检查是否有success字段
+            if isinstance(response_data, dict) and "success" in response_data:
+                return "success" if response_data["success"] else "failure"
+
+            # 如果没有success字段，尝试检查是否有code字段
+            if isinstance(response_data, dict) and "code" in response_data:
+                code = response_data["code"]
+                # 假设200表示成功，其他表示失败
+                return "success" if code == 200 else "failure"
+
+        except (json.JSONDecodeError, KeyError, TypeError):
+            # 如果解析失败，返回unknown
+            pass
+
+        return "unknown"
+
     async def _save_log_entry(self, **kwargs):
         """保存日志条目"""
         try:
@@ -276,6 +308,7 @@ class LoggingMiddleware:
                 visit_module=kwargs["route_info"]["visit_module"],
                 operation_type=kwargs["route_info"]["operation_type"],
                 operation_status=kwargs["operation_status"],
+                response_status=kwargs["response_status"],
                 response_result=kwargs["response_result"],
                 request_time=datetime.now(),
                 duration=kwargs["duration"],

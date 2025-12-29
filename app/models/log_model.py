@@ -26,7 +26,10 @@ class SysLog(Base):
     visit_module = Column(String(50), comment="访问模块")
     operation_type = Column(String(50), comment="操作类型")
     operation_status = Column(
-        String(20), nullable=False, comment="操作结果(success/failure)"
+        String(20), nullable=False, comment="接口请求状态(success/failure)"
+    )
+    response_status = Column(
+        String(20), nullable=False, comment="操作结果状态(success/failure)"
     )
     response_result = Column(Text, comment="返回结果(JSON格式)")
     request_time = Column(DateTime(timezone=True), nullable=False, comment="请求时间")
