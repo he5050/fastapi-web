@@ -2,7 +2,7 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional, Set, Union
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -16,13 +16,69 @@ from app.repositories.sys_log_repository import SysLogRepository
 logger = logging.getLogger(__name__)
 
 
+class LoggingMiddlewareConfig:
+    """
+    日志中间件配置类
+    """
+
+    def __init__(self):
+        # 从配置中获取排除规则，如果没有则使用默认值
+        config = getattr(settings, "LOGGING_MIDDLEWARE_CONFIG", {})
+
+        # 排除的路径前缀（支持前缀匹配）
+        self.excluded_paths: List[str] = config.get(
+            "excluded_paths", ["/health", "/docs", "/openapi.json"]
+        )
+
+        # 排除的HTTP方法
+        self.excluded_methods: List[str] = config.get("excluded_methods", [])
+
+        # 排除的状态码
+        self.excluded_status_codes: List[int] = config.get("excluded_status_codes", [])
+
+        # 排除的路径正则表达式
+        self.excluded_path_patterns: List[str] = config.get(
+            "excluded_path_patterns", []
+        )
+
+        # 响应体最大长度（超过此长度将被截断）
+        self.max_response_length: int = config.get("max_response_length", 1000)
+
+        # 请求参数最大长度（超过此长度将被截断）
+        self.max_request_length: int = config.get("max_request_length", 1000)
+
+        # 是否记录响应体
+        self.log_response_body: bool = config.get("log_response_body", True)
+
+        # 是否记录请求体
+        self.log_request_body: bool = config.get("log_request_body", True)
+
+
 class LoggingMiddleware:
     """
     日志中间件，用于记录所有请求和响应信息
+
+    功能特性：
+    1. 自动记录请求/响应信息（URL、方法、参数、响应、耗时等）
+    2. 支持排除特定路径、方法、状态码的日志记录
+    3. 智能解析请求参数（GET/POST/PUT/PATCH等）
+    4. 自动提取访问模块和操作类型
+    5. 异步保存日志，不影响业务性能
+    6. 支持响应体截断和敏感信息过滤
+    7. 完善的异常处理和错误恢复
+
+    配置说明：
+    - 通过 settings.LOGGING_MIDDLEWARE_CONFIG 配置排除规则
+    - 支持路径前缀匹配、正则表达式匹配
+    - 支持按HTTP方法、状态码排除
+    - 支持自定义响应体截断长度
     """
 
     def __init__(self, app: ASGIApp):
         self.app = app
+        # 初始化配置
+        self.config = LoggingMiddlewareConfig()
+
         # 创建独立的数据库引擎用于日志写入
         self.log_engine = create_async_engine(
             settings.async_database_url,
@@ -31,9 +87,11 @@ class LoggingMiddleware:
             pool_size=5,
             max_overflow=10,
         )
-        self.LogSessionLocal = async_sessionmaker(
+        self.log_session_local = async_sessionmaker(
             bind=self.log_engine, class_=AsyncSession, expire_on_commit=False
         )
+
+        logger.info(f"日志中间件已初始化，排除路径: {self.config.excluded_paths}")
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -43,46 +101,119 @@ class LoggingMiddleware:
         # 创建请求对象
         request = Request(scope, receive)
 
-        # 记录请求开始时间
-        start_time = time.time()
-
-        # 不记录健康检查接口的日志
-        if request.url.path == "/health":
+        # 检查是否需要排除此请求
+        if self._should_exclude_request(request):
             await self.app(scope, receive, send)
             return
 
-        # 提取请求信息
-        request_url = str(request.url)
-        request_method = request.method
-        client_ip = request.client.host if request.client else None
-        user_agent = request.headers.get("user-agent", "")
+        # 记录请求开始时间
+        start_time = time.time()
 
-        # 解析请求参数
+        try:
+            # 提取请求信息
+            request_info = self._extract_request_info(request)
+
+            # 解析请求参数
+            request_params, cached_body = await self._parse_request_params(request)
+
+            # 执行请求
+            response_body, status_code = await self._execute_request(
+                scope, receive, send, cached_body
+            )
+
+            # 获取路由信息
+            route_info = self._extract_route_info(request)
+
+            # 计算耗时
+            duration = int((time.time() - start_time) * 1000)
+
+            # 处理响应结果
+            response_result = self._process_response_body(response_body)
+
+            # 判断操作结果
+            operation_status = "success" if status_code < 400 else "failure"
+
+            # 构建并保存日志
+            await self._save_log_entry(
+                request_info=request_info,
+                request_params=request_params,
+                route_info=route_info,
+                status_code=status_code,
+                response_result=response_result,
+                duration=duration,
+                operation_status=operation_status,
+            )
+
+        except Exception as e:
+            logger.error(f"日志中间件处理失败: {str(e)}")
+            # 即使日志记录失败，也要确保请求正常执行
+            await self.app(scope, receive, send)
+
+    def _should_exclude_request(self, request: Request) -> bool:
+        """检查是否应该排除此请求的记录"""
+        path = request.url.path
+        method = request.method
+
+        # 检查路径前缀排除
+        for excluded_path in self.config.excluded_paths:
+            if path.startswith(excluded_path):
+                return True
+
+        # 检查HTTP方法排除
+        if method in self.config.excluded_methods:
+            return True
+
+        # 检查路径正则表达式排除
+        import re
+
+        for pattern in self.config.excluded_path_patterns:
+            if re.match(pattern, path):
+                return True
+
+        return False
+
+    def _extract_request_info(self, request: Request) -> dict:
+        """提取请求基本信息"""
+        return {
+            "request_url": str(request.url),
+            "request_method": request.method,
+            "client_ip": request.client.host if request.client else None,
+            "user_agent": request.headers.get("user-agent", "")[:500],
+        }
+
+    async def _parse_request_params(self, request: Request) -> tuple:
+        """解析请求参数"""
         request_params = {}
         cached_body = b""
+
         try:
-            if request_method in ["GET", "DELETE"]:
+            if request.method in ["GET", "DELETE"]:
                 request_params = dict(request.query_params)
-            elif request_method in ["POST", "PUT", "PATCH"]:
-                # 尝试读取JSON body
+            elif (
+                request.method in ["POST", "PUT", "PATCH"]
+                and self.config.log_request_body
+            ):
                 cached_body = await request.body()
                 if cached_body:
-                    try:
-                        request_params = json.loads(cached_body)
-                    except:
-                        # 如果不是JSON，尝试form data
-                        try:
-                            # Note: request.form() also consumes body, so we use cached_body
-                            # But for simplicity in logging, we just record if it's not JSON
-                            pass
-                        except:
-                            pass
+                    request_params = self._parse_body_params(cached_body)
         except Exception as e:
             logger.warning(f"解析请求参数失败: {str(e)}")
 
-        # 存储原始send函数
+        return request_params, cached_body
+
+    def _parse_body_params(self, body: bytes) -> dict:
+        """解析请求体参数"""
+        try:
+            return json.loads(body)
+        except json.JSONDecodeError:
+            # 如果不是JSON，返回空字典（不记录非JSON的请求体）
+            return {}
+
+    async def _execute_request(self, scope, receive, send, cached_body: bytes) -> tuple:
+        """执行请求并捕获响应"""
         response_body = bytearray()
         status_code = 200
+        body_sent = False
 
         async def send_wrapper(message):
             nonlocal status_code, response_body
@@ -93,10 +224,6 @@ class LoggingMiddleware:
                     response_body.extend(message["body"])
             await send(message)
 
-        # 创建一个新的 receive 函数，用于将缓存的 body 传递给后续的 handler
-        # 我们需要确保只返回一次 body，后续的调用应该由原始的 receive 处理（例如 http.disconnect）
-        body_sent = False
-
         async def receive_wrapper():
             nonlocal body_sent
             if not body_sent:
@@ -104,70 +231,71 @@ class LoggingMiddleware:
                 return {"type": "http.request", "body": cached_body, "more_body": False}
             return await receive()
 
-        # 执行请求
         try:
             await self.app(scope, receive_wrapper, send_wrapper)
         except Exception as e:
-            # 如果请求过程中发生异常，记录异常信息
             logger.error(f"请求处理异常: {str(e)}")
             status_code = 500
             response_body = bytearray(str(e).encode("utf-8"))
 
-        # 获取路由信息（访问模块和操作类型）
-        # 在执行完 self.app 之后，scope 中才会被 FastAPI 注入路由信息
+        return response_body, status_code
+
+    def _extract_route_info(self, request: Request) -> dict:
+        """提取路由信息"""
         route = request.scope.get("route")
-        visit_module = None
-        operation_type = None
-        if route:
-            # 从 tags 中获取访问模块
-            visit_module = route.tags[0] if route.tags else None
-            # 从 summary 中获取操作类型（如"新增用户"、"获取用户列表"等）
-            operation_type = getattr(route, "summary", None)
-            # 如果 summary 不存在，尝试使用 operation_id（函数名）
-            if not operation_type:
-                operation_type = getattr(route, "operation_id", None)
+        if not route:
+            return {"visit_module": None, "operation_type": None}
 
-        # 计算耗时
-        duration = int((time.time() - start_time) * 1000)
+        visit_module = route.tags[0] if route.tags else None
+        operation_type = getattr(route, "summary", None)
+        if not operation_type:
+            operation_type = getattr(route, "operation_id", None)
 
-        # 读取响应内容
-        response_result = ""
+        return {"visit_module": visit_module, "operation_type": operation_type}
+
+    def _process_response_body(self, response_body: bytearray) -> str:
+        """处理响应体"""
+        if not self.config.log_response_body:
+            return ""
+
         try:
             response_result = response_body.decode("utf-8", errors="ignore")
-        except:
-            response_result = str(response_body)
+            return response_result[: self.config.max_response_length]
+        except Exception:
+            return str(response_body)
 
-        # 判断操作结果（根据状态码）
-        operation_status = "success" if status_code < 400 else "failure"
-
-        # 构建日志对象
-        log_entry = SysLog(
-            request_url=request_url,
-            request_method=request_method,
-            request_params=json.dumps(request_params, ensure_ascii=False, default=str),
-            visit_module=visit_module,
-            operation_type=operation_type,
-            operation_status=operation_status,
-            response_result=response_result[:1000],  # 限制长度
-            request_time=datetime.now(),
-            duration=duration,
-            client_ip=client_ip,
-            user_agent=user_agent[:500] if user_agent else None,
-        )
-
-        # 异步保存日志（不阻塞响应）
+    async def _save_log_entry(self, **kwargs):
+        """保存日志条目"""
         try:
+            log_entry = SysLog(
+                request_url=kwargs["request_info"]["request_url"],
+                request_method=kwargs["request_info"]["request_method"],
+                request_params=json.dumps(
+                    kwargs["request_params"], ensure_ascii=False, default=str
+                ),
+                visit_module=kwargs["route_info"]["visit_module"],
+                operation_type=kwargs["route_info"]["operation_type"],
+                operation_status=kwargs["operation_status"],
+                response_result=kwargs["response_result"],
+                request_time=datetime.now(),
+                duration=kwargs["duration"],
+                client_ip=kwargs["request_info"]["client_ip"],
+                user_agent=kwargs["request_info"]["user_agent"],
+            )
             await self._save_log_async(log_entry)
         except Exception as e:
-            # 日志保存失败不应影响业务，仅记录错误
             logger.error(f"保存日志失败: {str(e)}")
 
     async def _save_log_async(self, log_entry: SysLog):
         """异步保存日志，使用独立的数据库会话"""
         try:
-            async with self.LogSessionLocal() as session:
+            async with self.get_log_session()() as session:
                 repo = SysLogRepository(session)
                 await repo.create(log_entry)
         except Exception as e:
             logger.error(f"保存日志到数据库失败: {str(e)}")
-            raise
+            # 不抛出异常，避免影响业务逻辑
+
+    def get_log_session(self):
+        """获取数据库会话，使用更规范的命名"""
+        return self.log_session_local

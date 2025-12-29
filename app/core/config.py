@@ -43,6 +43,36 @@ class Settings(BaseSettings):
     CORS_ALLOW_METHODS: list[str] = ["*"]  # 允许的方法
     CORS_ALLOW_HEADERS: list[str] = ["*"]  # 允许的头部
 
+    # 日志中间件配置示例
+    LOGGING_MIDDLEWARE_CONFIG: dict = {
+        # 排除的路径前缀（支持前缀匹配）
+        "excluded_paths": [
+            "/health",  # 健康检查接口
+            "/docs",  # API文档
+            "/openapi.json",  # OpenAPI文档
+            "/metrics",  # 监控指标
+            "/favicon.ico",  # 图标文件
+        ],
+        # 排除的HTTP方法
+        "excluded_methods": ["OPTIONS"],  # 预检请求
+        # 排除的状态码
+        "excluded_status_codes": [],
+        # 排除的路径正则表达式
+        "excluded_path_patterns": [
+            r"^/static/.*",  # 静态文件
+            r"^/assets/.*",  # 资源文件
+            r"^/api/v1/heartbeat.*",  # 心跳检测
+        ],
+        # 响应体最大长度（超过此长度将被截断）
+        "max_response_length": 1000,
+        # 请求参数最大长度（超过此长度将被截断）
+        "max_request_length": 1000,
+        # 是否记录响应体
+        "log_response_body": True,
+        # 是否记录请求体
+        "log_request_body": True,
+    }
+
     # 自动识别环境并加载对应的 .env 文件
     # 优先使用 local 环境，如果不存在则使用 dev
     model_config = SettingsConfigDict(
