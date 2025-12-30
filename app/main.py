@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.auth_router import router as auth_router
 from app.api.health_router import router as health_router
 from app.api.log_router import router as log_router
 from app.api.user_router import router as user_router
@@ -38,6 +39,26 @@ async def lifespan(app: FastAPI):
         await run_init_db()
 
     await check_db_connection()
+    # 初始化缓存
+    try:
+        from fastapi_cache import FastAPICache
+        from fastapi_cache.backends.redis import RedisBackend
+
+        redis_url = f"redis://:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
+        FastAPICache.init(
+            RedisBackend(redis_url),
+            prefix="fastapi-cache",
+            expire=60,  # 默认过期时间（秒）
+            enable=True,  # 启用缓存
+        )
+        logger.info(
+            "缓存服务初始化成功",
+            redis_url=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
+        )
+    except ImportError:
+        logger.warning("fastapi-cache2 未安装，缓存功能已禁用。")
+    except Exception as e:
+        logger.error("缓存服务连接失败", error=str(e))
     logger.info("应用启动成功")
     yield
     # 关闭时
@@ -68,6 +89,7 @@ app.add_exception_handler(RequestValidationError, global_exception_handler)
 app.add_exception_handler(Exception, global_exception_handler)
 
 # 注册路由
+app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(health_router)
 app.include_router(log_router)

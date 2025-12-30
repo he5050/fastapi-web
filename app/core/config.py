@@ -34,6 +34,19 @@ class Settings(BaseSettings):
     DB_POOL_TIMEOUT: int = 30  # 连接池超时时间
     DB_POOL_RECYCLE: int = 3600  # 连接池重用时间
 
+    # JWT配置（必须从环境变量读取，生产环境必须修改SECRET_KEY）
+    SECRET_KEY: str  # JWT密钥，必须通过环境变量配置
+    ALGORITHM: str = "HS256"  # JWT算法
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # 访问token过期时间（分钟）
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # 刷新token过期时间（天）
+
+    # Redis配置
+    REDIS_HOST: str = "127.0.0.1"
+    REDIS_PORT: int = 6379
+    REDIS_PASSWORD: str = ""
+    REDIS_DB: int = 0
+    REDIS_TIMEOUT: int = 10
+
     # 日志配置
     LOG_LEVEL: str = "INFO"  # 日志级别
 
@@ -141,6 +154,13 @@ def print_config_info():
 
     # 日志和其他配置
     print(f"📜 日志级别: {settings.LOG_LEVEL}")
+    
+    # JWT配置信息
+    print("🔐 JWT配置:")
+    print(f"   🗝️  算法: {settings.ALGORITHM}")
+    print(f"   ⏰ 访问token过期: {settings.ACCESS_TOKEN_EXPIRE_MINUTES}分钟")
+    print(f"   🔄 刷新token过期: {settings.REFRESH_TOKEN_EXPIRE_DAYS}天")
+    
     print(
         f"🌍 CORS允许源: {', '.join(settings.CORS_ORIGINS[:3])}{'...' if len(settings.CORS_ORIGINS) > 3 else ''}"
     )

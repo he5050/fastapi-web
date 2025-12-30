@@ -6,7 +6,7 @@ from typing import List, Optional, Set, Union
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from starlette.types import ASGIApp
 
 from app.core.config import settings
@@ -79,19 +79,11 @@ class LoggingMiddleware:
         # 初始化配置
         self.config = LoggingMiddlewareConfig()
 
-        # 创建独立的数据库引擎用于日志写入
-        self.log_engine = create_async_engine(
-            settings.async_database_url,
-            echo=False,
-            pool_pre_ping=True,
-            pool_size=5,
-            max_overflow=10,
-        )
-        self.log_session_local = async_sessionmaker(
-            bind=self.log_engine, class_=AsyncSession, expire_on_commit=False
-        )
+        # 复用主数据库引擎和会话工厂，避免重复创建连接池
+        from app.db.session import AsyncSessionLocal
+        self.log_session_local = AsyncSessionLocal
 
-        logger.info(f"日志中间件已初始化，排除路径: {self.config.excluded_paths}")
+        logger.info(f"日志中间件已初始化（复用主数据库引擎），排除路径: {self.config.excluded_paths}")
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -330,5 +322,5 @@ class LoggingMiddleware:
             # 不抛出异常，避免影响业务逻辑
 
     def get_log_session(self):
-        """获取数据库会话，使用更规范的命名"""
+        """获取数据库会话（复用主数据库引擎）"""
         return self.log_session_local
