@@ -210,11 +210,13 @@ class LoggingMiddleware:
         response_body = bytearray()
         status_code = 200
         body_sent = False
+        response_started = False
 
         async def send_wrapper(message):
-            nonlocal status_code, response_body, body_sent
+            nonlocal status_code, response_body, body_sent, response_started
             if message["type"] == "http.response.start":
                 status_code = message["status"]
+                response_started = True
             elif message["type"] == "http.response.body":
                 if "body" in message and message["body"]:
                     response_body.extend(message["body"])
@@ -232,9 +234,33 @@ class LoggingMiddleware:
         try:
             await self.app(scope, receive_wrapper, send_wrapper)
         except Exception as e:
-            logger.error(f"请求处理异常: {str(e)}")
+            logger.error(f"请求处理异常: {str(e)}", exc_info=True)
             status_code = 500
-            response_body = bytearray(str(e).encode("utf-8"))
+            error_message = str(e)
+            response_body = bytearray(error_message.encode("utf-8"))
+
+            # 如果响应还未开始，需要手动发送响应
+            if not response_started:
+                try:
+                    # 发送响应头
+                    await send({
+                        "type": "http.response.start",
+                        "status": 500,
+                        "headers": [[b"content-type", b"application/json"]],
+                    })
+                    # 发送响应体
+                    error_response = json.dumps({
+                        "success": False,
+                        "message": "服务器内部错误",
+                        "data": None
+                    }, ensure_ascii=False).encode("utf-8")
+                    response_body = bytearray(error_response)
+                    await send({
+                        "type": "http.response.body",
+                        "body": error_response,
+                    })
+                except Exception as send_error:
+                    logger.error(f"发送错误响应失败: {str(send_error)}")
 
         return response_body, status_code
 

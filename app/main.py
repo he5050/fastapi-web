@@ -41,12 +41,26 @@ async def lifespan(app: FastAPI):
     await check_db_connection()
     # 初始化缓存
     try:
+        from redis import asyncio as aioredis
         from fastapi_cache import FastAPICache
         from fastapi_cache.backends.redis import RedisBackend
 
-        redis_url = f"redis://:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
+        # 构建Redis连接URL
+        if settings.REDIS_PASSWORD:
+            redis_url = f"redis://:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
+        else:
+            redis_url = f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}"
+
+        # 创建Redis客户端实例
+        redis_client = aioredis.from_url(
+            redis_url,
+            encoding="utf-8",
+            decode_responses=True
+        )
+
+        # 初始化FastAPICache，传入Redis客户端对象而非字符串
         FastAPICache.init(
-            RedisBackend(redis_url),
+            RedisBackend(redis_client),
             prefix="fastapi-cache",
             expire=60,  # 默认过期时间（秒）
             enable=True,  # 启用缓存
