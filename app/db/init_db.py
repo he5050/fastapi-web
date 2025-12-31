@@ -47,6 +47,8 @@ async def create_super_admin():
     创建超级管理员（如果不存在）
     返回超级管理员的token用于免登录
     """
+    from passlib.hash import pbkdf2_sha256
+
     async with AsyncSessionLocal() as session:
         # 检查超级管理员是否存在
         result = await session.execute(
@@ -61,14 +63,10 @@ async def create_super_admin():
             print(f"🔑 超级管理员Token: {token}")
             return token
 
-        # 创建超级管理员 - 使用与验证逻辑一致的密码哈希方式
-        # 使用 bcrypt 直接哈希，与 security.py 和 user_service.py 一致
-        # bcrypt 只支持72字节以内的密码，需要截断
-        password_bytes = settings.SUPER_ADMIN_PASSWORD.encode("utf-8")
-        if len(password_bytes) > 72:
-            password_bytes = password_bytes[:72]
-        salt = bcrypt.gensalt()
-        hashed_password = bcrypt.hashpw(password_bytes, salt).decode("utf-8")
+        # 创建超级管理员 - 使用PBKDF2哈希密码
+        hashed_password = pbkdf2_sha256.hash(
+            settings.SUPER_ADMIN_PASSWORD, rounds=100000
+        )
 
         # 直接创建，user_type=1为超级管理员
         admin = User(

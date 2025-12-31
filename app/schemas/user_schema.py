@@ -41,7 +41,7 @@ class UserCreate(UserBase):
         rules = [
             ValidationRule(required=True, message="请输入密码"),
             ValidationRule(min_len=8, message="密码长度至少8位"),
-            ValidationRule(max_len=72, message="密码长度不能超过72位（bcrypt限制）"),
+            ValidationRule(max_len=128, message="密码长度不能超过128位"),
         ]
 
         # 基础规则验证

@@ -1,7 +1,7 @@
 import re
 from typing import Any
 
-import bcrypt
+from passlib.hash import pbkdf2_sha256
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppError
@@ -19,26 +19,12 @@ class UserService:
         self.repo = UserRepository(db)
 
     def _hash_password(self, password: str) -> str:
-        """使用bcrypt进行安全密码哈希"""
-        # bcrypt只支持72字节以内的密码，需要截断
-        password_bytes = password.encode("utf-8")
-        if len(password_bytes) > 72:
-            password_bytes = password_bytes[:72]
-
-        # 生成盐值并哈希
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(password_bytes, salt)
-        return hashed.decode("utf-8")
+        """使用PBKDF2进行安全密码哈希"""
+        return pbkdf2_sha256.hash(password, rounds=100000)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """验证密码"""
-        # bcrypt只支持72字节以内的密码，需要截断
-        password_bytes = plain_password.encode("utf-8")
-        if len(password_bytes) > 72:
-            password_bytes = password_bytes[:72]
-        hashed_bytes = hashed_password.encode("utf-8")
-
-        return bcrypt.checkpw(password_bytes, hashed_bytes)
+        return pbkdf2_sha256.verify(plain_password, hashed_password)
 
     def _validate_password_strength(self, password: str) -> None:
         """验证密码强度"""
