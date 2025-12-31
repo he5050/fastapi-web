@@ -2,13 +2,13 @@
 安全工具类：JWT token管理和密码验证
 """
 
+import bcrypt
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -16,9 +16,6 @@ from app.core.redis_service import redis_service
 from app.db.session import get_db
 from app.models.user_model import User
 from app.repositories.user_repository import UserRepository
-
-# 密码加密上下文
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # OAuth2密码Bearer模式
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -35,7 +32,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         bool: 密码是否匹配
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    # bcrypt只支持72字节以内的密码，需要截断
+    password_bytes = plain_password.encode("utf-8")
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+    hashed_bytes = hashed_password.encode("utf-8")
+
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

@@ -1,4 +1,5 @@
 import asyncio
+import bcrypt
 
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -60,10 +61,9 @@ async def create_super_admin():
             print(f"🔑 超级管理员Token: {token}")
             return token
 
-        # 创建超级管理员
-        import bcrypt
-
-        # 密码哈希
+        # 创建超级管理员 - 使用与验证逻辑一致的密码哈希方式
+        # 使用 bcrypt 直接哈希，与 security.py 和 user_service.py 一致
+        # bcrypt 只支持72字节以内的密码，需要截断
         password_bytes = settings.SUPER_ADMIN_PASSWORD.encode("utf-8")
         if len(password_bytes) > 72:
             password_bytes = password_bytes[:72]

@@ -32,6 +32,7 @@ class UserService:
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """验证密码"""
+        # bcrypt只支持72字节以内的密码，需要截断
         password_bytes = plain_password.encode("utf-8")
         if len(password_bytes) > 72:
             password_bytes = password_bytes[:72]
