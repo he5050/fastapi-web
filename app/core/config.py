@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     # 日志配置
     LOG_LEVEL: str = "INFO"  # 日志级别
 
+    # 超级管理员配置
+    SUPER_ADMIN_USERNAME: str = "superadmin"  # 超级管理员用户名
+    SUPER_ADMIN_PASSWORD: str = "SuperAdmin123!"  # 超级管理员密码
+    SUPER_ADMIN_EMAIL: str = "superadmin@example.com"  # 超级管理员邮箱
+    SUPER_ADMIN_FULL_NAME: str = "超级管理员"  # 超级管理员全名
+
     # CORS配置
     CORS_ORIGINS: list[str] = ["*"]  # 生产环境应该具体配置
     CORS_ALLOW_CREDENTIALS: bool = True  # 是否允许凭据

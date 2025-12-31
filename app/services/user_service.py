@@ -101,6 +101,7 @@ class UserService:
         user_data = obj_in.model_dump()
         password = user_data.pop("password")
         user_data["hashed_password"] = self._hash_password(password)
+        user_data["user_type"] = 9  # 强制设置为普通用户
 
         db_user = User(**user_data)
         return await self.repo.create(db_user)

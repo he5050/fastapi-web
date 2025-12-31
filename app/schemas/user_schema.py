@@ -93,3 +93,4 @@ class UserOut(UserBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    user_type: int

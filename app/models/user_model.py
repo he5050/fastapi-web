@@ -27,6 +27,12 @@ class User(Base):
     full_name = Column(String(100), nullable=True, comment="全名")
     is_active = Column(Boolean, default=True, comment="是否激活")
     is_deleted = Column(Boolean, default=False, comment="是否已删除")
+    user_type = Column(
+        Integer,
+        default=9,
+        nullable=False,
+        comment="用户类型：1-超级管理员，9-普通用户",
+    )
     created_at = Column(
         DateTime(timezone=True), server_default=func.now(), comment="创建时间"
     )

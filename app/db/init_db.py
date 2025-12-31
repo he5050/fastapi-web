@@ -1,10 +1,11 @@
 import asyncio
 
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import settings
-from app.db.session import Base, engine
+from app.core.security import create_access_token
+from app.db.session import AsyncSessionLocal, Base, engine
 from app.models.log_model import SysLog  # noqa
 
 # 导入模型以确保 Base.metadata 包含所有表
@@ -40,6 +41,57 @@ async def init_models():
     print("✅ 所有表结构初始化完成")
 
 
+async def create_super_admin():
+    """
+    创建超级管理员（如果不存在）
+    返回超级管理员的token用于免登录
+    """
+    async with AsyncSessionLocal() as session:
+        # 检查超级管理员是否存在
+        result = await session.execute(
+            select(User).where(User.user_name == settings.SUPER_ADMIN_USERNAME)
+        )
+        admin = result.scalars().first()
+
+        if admin:
+            print(f"✅ 超级管理员已存在: {admin.user_name}")
+            # 生成token
+            token = create_access_token(data={"sub": str(admin.user_id)})
+            print(f"🔑 超级管理员Token: {token}")
+            return token
+
+        # 创建超级管理员
+        import bcrypt
+
+        # 密码哈希
+        password_bytes = settings.SUPER_ADMIN_PASSWORD.encode("utf-8")
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password_bytes, salt).decode("utf-8")
+
+        # 直接创建，user_type=1为超级管理员
+        admin = User(
+            user_name=settings.SUPER_ADMIN_USERNAME,
+            email=settings.SUPER_ADMIN_EMAIL,
+            full_name=settings.SUPER_ADMIN_FULL_NAME,
+            hashed_password=hashed_password,
+            user_type=1,  # 超级管理员
+            is_active=True,
+        )
+
+        session.add(admin)
+        await session.commit()
+        await session.refresh(admin)
+
+        print(f"✅ 超级管理员创建成功: {admin.user_name}")
+
+        # 生成token
+        token = create_access_token(data={"sub": str(admin.user_id)})
+        print(f"🔑 超级管理员Token: {token}")
+        return token
+
+
 async def run_init_db():
     """
     供应用启动时调用的统一初始化函数
@@ -49,6 +101,7 @@ async def run_init_db():
     try:
         await create_database_if_not_exists()
         await init_models()
+        await create_super_admin()  # 新增：创建超级管理员
         print("✨ 数据库巡检与初始化任务执行成功！")
     except Exception as e:
         print(f"❌ 数据库初始化失败: {str(e)}")
