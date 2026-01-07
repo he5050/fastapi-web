@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import Any, Optional
 
 from passlib.hash import pbkdf2_sha256
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,8 +59,8 @@ class UserService:
             raise AppError(f"用户 ID {user_id} 不存在")
         return user
 
-    async def list_users(self, page: int, page_size: int) -> dict[str, Any]:
-        items, total = await self.repo.get_list(page, page_size)
+    async def list_users(self, page: int, page_size: int, current_user: Optional[User] = None) -> dict[str, Any]:
+        items, total = await self.repo.get_list(page, page_size, current_user)
         total_page = (total + page_size - 1) // page_size
         return {
             "records": items,
@@ -104,3 +104,52 @@ class UserService:
     async def delete_user(self, user_id: int) -> bool:
         await self.get_user(user_id)  # 确保存在
         return await self.repo.delete(user_id)
+
+    async def can_delete_user(self, current_user: User, target_user_id: int) -> bool:
+        """检查当前用户是否可以删除目标用户"""
+        # 只有管理员可以删除用户
+        if current_user.user_type != 1:
+            return False
+            
+        # 获取目标用户
+        target_user = await self.get_user(target_user_id)
+        
+        # 不能删除自己
+        if target_user.user_id == current_user.user_id:
+            raise AppError("不能删除自己的账户")
+            
+        return True
+
+    async def can_view_user(self, current_user: User, target_user_id: int) -> bool:
+        """检查当前用户是否可以查看目标用户"""
+        # 管理员可以查看所有用户
+        if current_user.user_type == 1:
+            return True
+            
+        # 普通用户只能查看自己
+        if current_user.user_id == target_user_id:
+            return True
+            
+        return False
+
+    async def can_update_user(self, current_user: User, target_user_id: int) -> bool:
+        """检查当前用户是否可以更新目标用户"""
+        # 获取目标用户
+        target_user = await self.get_user(target_user_id)
+        
+        # 管理员可以更新所有用户（但不能修改其他管理员的信息）
+        if current_user.user_type == 1:
+            # 如果目标用户是管理员且不是自己，限制部分操作
+            if target_user.user_type == 1 and target_user.user_id != current_user.user_id:
+                raise AppError("不能修改其他管理员用户的信息")
+            return True
+            
+        # 普通用户不能修改管理员用户
+        if target_user.user_type == 1:
+            return False
+            
+        # 普通用户只能修改自己
+        if current_user.user_id == target_user_id:
+            return True
+            
+        return False

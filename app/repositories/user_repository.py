@@ -33,21 +33,28 @@ class UserRepository:
         return result.scalars().first()
 
     async def get_list(
-        self, page: int = 1, page_size: int = 10
+        self, page: int = 1, page_size: int = 10, current_user: Optional[User] = None
     ) -> Tuple[List[User], int]:
         # 计算偏移量
         offset = (page - 1) * page_size
 
+        # 构建查询条件
+        conditions = [User.is_deleted == False]
+        
+        # 如果不是管理员，过滤掉管理员用户
+        if current_user and current_user.user_type != 1:
+            conditions.append(User.user_type != 1)
+
         # 查询总数
         count_result = await self.db.execute(
-            select(func.count(User.user_id)).where(User.is_deleted == False)
+            select(func.count(User.user_id)).where(*conditions)
         )
         total = count_result.scalar() or 0
 
         # 查询列表
         result = await self.db.execute(
             select(User)
-            .where(User.is_deleted == False)
+            .where(*conditions)
             .offset(offset)
             .limit(page_size)
             .order_by(User.user_id.desc())

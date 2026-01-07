@@ -126,13 +126,88 @@ class UserOut(UserBase):
             'user_type': user.user_type
         }
         
-        # 如果没有当前用户信息，或者当前用户是普通用户，隐藏敏感信息
-        if current_user is None or current_user.user_type != 1:
-            # 普通用户看不到管理员的具体信息
-            if user.user_type == 1:  # 如果是管理员，隐藏详细信息
+        # 权限控制逻辑
+        if current_user is None:
+            # 没有当前用户信息，隐藏所有敏感信息
+            if user.user_type == 1:  # 管理员用户
                 user_data['email'] = None
-                user_data['full_name'] = '管理员'
+                user_data['full_name'] = '系统管理员'
                 user_data['is_active'] = True
                 user_data['user_type'] = 9  # 伪装成普通用户
+        elif current_user.user_type != 1:
+            # 普通用户权限控制
+            if user.user_type == 1:
+                # 普通用户看不到管理员的详细信息
+                user_data['email'] = None
+                user_data['full_name'] = '系统管理员'
+                user_data['is_active'] = True
+                user_data['user_type'] = 9  # 伪装成普通用户
+            elif user.user_id != current_user.user_id:
+                # 普通用户看不到其他普通用户的敏感信息
+                user_data['email'] = None
+                # 保留基本用户名和状态信息
+                user_data['full_name'] = user.full_name or '用户' + str(user.user_id)
+        # 管理员用户可以看到所有完整信息
         
         return cls.model_validate(user_data)
+    
+    @classmethod
+    def create_safe_user_output(cls, user: 'User', current_user: 'User' = None) -> dict[str, Any]:
+        """
+        创建安全的用户输出字典，用于不同场景的权限控制
+        
+        Args:
+            user: 要输出的用户对象
+            current_user: 当前访问的用户对象
+            
+        Returns:
+            根据权限过滤后的用户字典
+        """
+        if current_user and current_user.user_type == 1:
+            # 管理员可以看到所有信息
+            return {
+                'user_id': user.user_id,
+                'user_name': user.user_name,
+                'email': user.email,
+                'full_name': user.full_name,
+                'is_active': user.is_active,
+                'created_at': user.created_at,
+                'updated_at': user.updated_at,
+                'user_type': user.user_type
+            }
+        elif current_user and user.user_id == current_user.user_id:
+            # 用户可以看到自己的完整信息（除了用户类型）
+            return {
+                'user_id': user.user_id,
+                'user_name': user.user_name,
+                'email': user.email,
+                'full_name': user.full_name,
+                'is_active': user.is_active,
+                'created_at': user.created_at,
+                'updated_at': user.updated_at,
+                'user_type': 9  # 对自己也隐藏真实用户类型
+            }
+        else:
+            # 其他情况，返回最小信息
+            if user.user_type == 1:
+                return {
+                    'user_id': user.user_id,
+                    'user_name': 'admin',
+                    'email': None,
+                    'full_name': '系统管理员',
+                    'is_active': True,
+                    'created_at': user.created_at,
+                    'updated_at': user.updated_at,
+                    'user_type': 9
+                }
+            else:
+                return {
+                    'user_id': user.user_id,
+                    'user_name': user.user_name,
+                    'email': None,
+                    'full_name': user.full_name or f'用户{user.user_id}',
+                    'is_active': user.is_active,
+                    'created_at': user.created_at,
+                    'updated_at': user.updated_at,
+                    'user_type': 9
+                }
