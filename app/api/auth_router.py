@@ -18,6 +18,7 @@ from app.db.session import get_db
 from app.models.user_model import User
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth_schema import LoginRequest, TokenRefreshRequest, TokenResponse
+from app.schemas.user_schema import UserOut
 
 router = APIRouter(prefix="/auth", tags=["认证管理"])
 
@@ -28,14 +29,14 @@ async def logout(
 ) -> BaseResponse[dict]:
     """
     用户登出，撤销当前用户的所有token
-    
+
     说明：
     - 撤销用户的所有访问token和刷新token
     - 实现单点登录，用户在任意位置登出，所有设备都会失效
     """
     # 撤销用户的所有token
     redis_service.revoke_all_user_tokens(current_user.user_id)
-    
+
     return BaseResponse.success_res(message="登出成功")
 
 
@@ -140,10 +141,10 @@ async def refresh_token(
     return BaseResponse.success_res(data=token_response, message="刷新成功")
 
 
-@router.get("/me", response_model=BaseResponse[dict], summary="获取当前用户信息")
+@router.get("/me", response_model=BaseResponse[UserOut], summary="获取当前用户信息")
 async def get_current_user_info(
     current_user: User = Depends(get_current_active_user),
-) -> BaseResponse[dict]:
+) -> BaseResponse[UserOut]:
     """
     获取当前登录用户信息
 
@@ -152,16 +153,7 @@ async def get_current_user_info(
     Authorization: Bearer <access_token>
     ```
     """
-    from app.schemas.user_schema import UserOut
 
-    user_data = UserOut(
-        user_id=current_user.user_id,
-        user_name=current_user.user_name,
-        email=current_user.email,
-        full_name=current_user.full_name,
-        is_active=current_user.is_active,
-        created_at=current_user.created_at,
-        updated_at=current_user.updated_at,
-    )
+    user_out = UserOut.model_validate(current_user)
 
-    return BaseResponse.success_res(data=user_data.model_dump())
+    return BaseResponse.success_res(data=user_out, message="获取用户信息成功")

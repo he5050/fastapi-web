@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Any
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, field_serializer
 
 from app.schemas.base_schema import BaseSchema
 
@@ -26,6 +26,13 @@ class SysLogOut(BaseSchema):
     client_ip: Optional[str] = Field(None, description="客户端IP")
     user_agent: Optional[str] = Field(None, description="客户端User-Agent")
     created_at: datetime = Field(..., description="创建时间")
+    
+    @field_serializer('request_time', 'created_at')
+    def serialize_datetime(self, value: datetime) -> str:
+        """将datetime对象格式化为YYYY-MM-DD HH:mm:ss格式"""
+        if value is None:
+            return None
+        return value.strftime("%Y-%m-%d %H:%M:%S")
 
 
 class LogBatchDelete(BaseSchema):

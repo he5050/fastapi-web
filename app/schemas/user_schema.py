@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import EmailStr, Field, field_validator
+from pydantic import EmailStr, Field, field_validator, field_serializer
 
 from app.core.validator import ValidationRule, validate_rules
 from app.schemas.base_schema import BaseSchema
@@ -94,3 +94,10 @@ class UserOut(UserBase):
     created_at: datetime
     updated_at: datetime
     user_type: int
+    
+    @field_serializer('created_at', 'updated_at')
+    def serialize_datetime(self, value: datetime) -> str:
+        """将datetime对象格式化为YYYY-MM-DD HH:mm:ss格式"""
+        if value is None:
+            return None
+        return value.strftime("%Y-%m-%d %H:%M:%S")
