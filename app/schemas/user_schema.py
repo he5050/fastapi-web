@@ -101,3 +101,38 @@ class UserOut(UserBase):
         if value is None:
             return None
         return value.strftime("%Y-%m-%d %H:%M:%S")
+    
+    @classmethod
+    def from_user_with_permission(cls, user: 'User', current_user: 'User' = None) -> 'UserOut':
+        """
+        根据当前用户权限创建用户输出对象
+        
+        Args:
+            user: 要输出的用户对象
+            current_user: 当前访问的用户对象
+            
+        Returns:
+            根据权限过滤后的用户输出对象
+        """
+        # 创建基础的用户输出对象
+        user_data = {
+            'user_id': user.user_id,
+            'user_name': user.user_name,
+            'email': user.email,
+            'full_name': user.full_name,
+            'is_active': user.is_active,
+            'created_at': user.created_at,
+            'updated_at': user.updated_at,
+            'user_type': user.user_type
+        }
+        
+        # 如果没有当前用户信息，或者当前用户是普通用户，隐藏敏感信息
+        if current_user is None or current_user.user_type != 1:
+            # 普通用户看不到管理员的具体信息
+            if user.user_type == 1:  # 如果是管理员，隐藏详细信息
+                user_data['email'] = None
+                user_data['full_name'] = '管理员'
+                user_data['is_active'] = True
+                user_data['user_type'] = 9  # 伪装成普通用户
+        
+        return cls.model_validate(user_data)

@@ -24,9 +24,11 @@ async def create_user(
 ) -> BaseResponse[UserOut]:
     service = UserService(db)
     user = await service.create_user(obj_in)
+    # 使用权限控制方法创建用户输出对象
+    user_out = UserOut.from_user_with_permission(user, current_user)
     # 新增用户后，清空用户列表缓存
     await FastAPICache.clear(namespace="users_list")
-    return BaseResponse.success_res(data=user)
+    return BaseResponse.success_res(data=user_out)
 
 
 @router.get("/list", response_model=PageResponse[UserOut], summary="获取用户列表")
@@ -41,6 +43,9 @@ async def list_users(
     """
     service = UserService(db)
     data = await service.list_users(pagination.page, pagination.page_size)
+    # 使用权限控制方法创建用户输出列表，确保缓存能正确序列化
+    user_out_list = [UserOut.from_user_with_permission(user, current_user) for user in data["records"]]
+    data["records"] = user_out_list
     page_data = PageData[UserOut](**data)
     return PageResponse(success=True, data=page_data, message="获取成功")
 
@@ -56,7 +61,9 @@ async def get_user(
 ) -> BaseResponse[UserOut]:
     service = UserService(db)
     user = await service.get_user(user_id)
-    return BaseResponse.success_res(data=user)
+    # 使用权限控制方法创建用户输出对象，确保缓存能正确序列化
+    user_out = UserOut.from_user_with_permission(user, current_user)
+    return BaseResponse.success_res(data=user_out)
 
 
 @router.put(
@@ -70,10 +77,12 @@ async def update_user(
 ) -> BaseResponse[UserOut]:
     service = UserService(db)
     user = await service.update_user(user_id, obj_in)
+    # 使用权限控制方法创建用户输出对象
+    user_out = UserOut.from_user_with_permission(user, current_user)
     # 更新用户信息后，清空相关缓存
     await FastAPICache.clear(namespace="user_detail")
     await FastAPICache.clear(namespace="users_list")
-    return BaseResponse.success_res(data=user)
+    return BaseResponse.success_res(data=user_out)
 
 
 @router.delete(

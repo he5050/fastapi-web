@@ -125,6 +125,11 @@ class UserFactory:
         from app.models.user_model import User
         from app.services.user_service import UserService
         
+        # 处理id字段，将其映射为user_id
+        user_id = overrides.pop("id", None)
+        if user_id is not None:
+            overrides["user_id"] = user_id
+        
         # 创建哈希密码
         user_service = UserService(None)  # 不需要db实例来哈希密码
         password = overrides.get("password", "StrongPass123!")
@@ -134,8 +139,8 @@ class UserFactory:
         data.pop("password")  # 移除明文密码
         
         # 确保user_id字段存在
-        if "user_id" not in overrides:
-            data["user_id"] = overrides.get("id", 1)
+        if "user_id" not in data:
+            data["user_id"] = 1
         
         return User(**data)
 
